@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Telechat</title>
+<style>
+/* ================= THEME (Preserved Original UI Palette) ================= */
+:root{
+  --accent:#3390ec;--accent-hover:#2b7fd4;--bg:#fff;--panel:#fff;--chat-bg:#e9eef4;
+  --border:#e6e9ee;--text:#0f1419;--muted:#8a9199;--hover:#f2f4f7;
+  --bubble-in:#fff;--bubble-out:#3390ec;--bubble-out-text:#fff;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.10);--danger:#e5484d;
+  --lux-ring:rgba(51,144,236,.28);
+}
+[data-theme="dark"]{
+  --bg:#17212b;--panel:#17212b;--chat-bg:#0e1621;--border:#243240;--text:#f5f7fa;
+  --muted:#7f91a4;--hover:#202b36;--bubble-in:#182533;--bubble-out:#2b5278;--shadow:none;
+  --lux-ring:rgba(94,181,247,.32);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Pyidaungsu","Myanmar Text","Noto Sans Myanmar",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:15px}
+button{font-family:inherit}
+.hidden{display:none!important}
+.app{display:flex;height:100vh;width:100vw;position:relative}
+
+/* ---------- Sidebar ---------- */
+.sidebar{width:350px;min-width:280px;display:flex;flex-direction:column;background:var(--panel);border-right:1px solid var(--border);height:100vh;position:relative}
+.sidebar-header{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}
+/* Logo hidden per user instructions */
+.brand .logo{display:none!important}
+.brand h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.25px;transition:color .2s}
+.brand h1.offline{color:#f59e0b;font-size:15px}
+.header-actions{display:flex;gap:4px}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s,color .15s;flex-shrink:0}
+.icon-btn svg{display:block}
+.icon-btn:hover{background:var(--hover);color:var(--accent)}
+.icon-btn:active{transform:scale(.94)}
+#themeBtn .ico-sun{display:none}
+[data-theme="dark"] #themeBtn .ico-moon{display:none}
+[data-theme="dark"] #themeBtn .ico-sun{display:block}
+.sidebar-panel{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;padding-bottom:92px}
+.sidebar-panel.hidden{display:none}
+.search-wrap{padding:10px 12px 6px;flex-shrink:0}
+.search-wrap input{width:100%;height:38px;border-radius:19px;border:1px solid var(--border);background:var(--hover);color:var(--text);padding:0 16px;font-size:14px;outline:none;transition:border-color .15s,background .15s}
+.search-wrap input:focus{border-color:var(--accent);background:var(--panel)}
+.search-wrap input::placeholder{color:var(--muted)}
+.folder-chips{display:flex;gap:6px;padding:4px 12px 8px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.folder-chips::-webkit-scrollbar{display:none}
+.folder-chip{padding:5px 12px;border-radius:14px;background:var(--hover);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;border:none;white-space:nowrap;transition:background .15s,color .15s}
+.folder-chip:hover{background:var(--border)}
+.folder-chip.active{background:var(--accent);color:#fff}
+.folder-chip.add{padding:5px 10px;color:var(--accent);font-weight:700}
+.chat-list{flex:1;overflow-y:auto;padding:4px 0 12px}
+.chat-item{display:flex;align-items:center;gap:12px;padding:9px 12px;margin:1px 8px;border-radius:10px;cursor:pointer;position:relative;transition:background .12s,transform .12s}
+.chat-item:hover{background:var(--hover)}
+.chat-item:active{transform:scale(.99)}
+.chat-item.active{background:var(--accent)}
+.chat-item.active .chat-name,.chat-item.active .chat-preview,.chat-item.active .chat-time{color:#fff}
+.chat-item.active .chat-preview{opacity:.85}
+.chat-item.active .verified{color:#fff}
+.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:17px;flex-shrink:0;user-select:none;overflow:hidden;background-size:cover;background-position:center}
+.avatar.sm{width:40px;height:40px;font-size:15px}
+.avatar.saved{background:linear-gradient(135deg,#5eb5f7,#3390ec)!important}
+.avatar.saved svg{display:block}
+.chat-body{flex:1;min-width:0}
+.chat-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chat-name{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.verified{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;flex-shrink:0}
+.chat-item.active .verified{background:#fff;color:var(--accent)}
+.chat-time{font-size:12px;color:var(--muted);flex-shrink:0}
+.chat-preview{font-size:13.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.badge{background:var(--accent);color:#fff;font-size:11.5px;font-weight:600;min-width:20px;height:20px;border-radius:10px;padding:0 6px;display:flex;align-items:center;justify-content:center}
+.chat-item.active .badge{background:#fff;color:var(--accent)}
+.del-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.08);color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1}
+.chat-item:hover .del-btn{display:flex}
+.del-btn:hover{background:var(--danger);color:#fff}
+.del-btn svg{display:block}
+.empty-list{padding:40px 20px;text-align:center;color:var(--muted);font-size:13.5px}
+
+/* ---------- Settings panel in sidebar (NO BANNER) ---------- */
+#settingsPanel{padding:6px 0 92px}
+.settings-profile-card{margin:10px 12px 12px;border-radius:14px;overflow:hidden;background:var(--hover);border:1px solid var(--border);padding:14px;animation:slideUp .35s cubic-bezier(.2,.9,.3,1) backwards}
+.settings-avatar-wrap{display:flex;align-items:center;gap:12px}
+.settings-avatar{width:64px;height:64px;border-radius:50%;border:2px solid var(--panel);background:linear-gradient(135deg,#37aee2,#1e96c8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;background-size:cover;background-position:center;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.sp-info{flex:1;min-width:0}
+.sp-name{font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px}
+.sp-username{font-size:13px;color:var(--accent);margin-top:2px}
+.sp-bio{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.sp-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:5px;box-shadow:0 0 0 2px rgba(74,222,128,.25)}
+.profile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:12px}
+.p-act{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 4px;color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:inherit;transition:background .15s,transform .1s,border-color .15s}
+.p-act:hover{background:var(--hover);border-color:var(--accent)}
+.p-act:active{transform:scale(.96)}
+.p-act svg{color:var(--text)}
+.p-act span{line-height:1}
+
+.settings-group{padding:0 8px}
+.set-item{width:100%;display:flex;align-items:center;gap:14px;padding:12px 14px;background:transparent;border:none;border-radius:10px;color:var(--text);font-size:14.5px;font-family:inherit;cursor:pointer;text-align:left;transition:background .12s,transform .12s}
+.set-item:hover{background:var(--hover)}
+.set-item:active{transform:scale(.99)}
+.set-item .si-ico{width:34px;height:34px;border-radius:10px;background:var(--hover);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)}
+.set-item:hover .si-ico{background:var(--border)}
+.set-item .si-arrow{margin-left:auto;color:var(--muted);display:flex;align-items:center}
+
+/* ---------- 3 Floating Centered Luxury Squircle Nav Buttons (No Banner, Not Touching Bottom) ---------- */
+.bottom-nav-wrap{
+  position:absolute;
+  bottom:16px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:45;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+.bottom-nav{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:transparent;
+  border:none;
+  padding:0;
+}
+.nav-btn{
+  width:56px;
+  height:56px;
+  border-radius:18px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  color:var(--muted);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:0;
+  cursor:pointer;
+  font-size:10px;
+  font-family:inherit;
+  font-weight:600;
+  box-shadow:0 8px 22px rgba(16,24,40,.14);
+  transition:transform .18s cubic-bezier(.2,.9,.3,1),border-color .18s,color .18s,box-shadow .18s;
+}
+[data-theme="dark"] .nav-btn{
+  background:#1f2c3a;
+  border-color:#2d3e50;
+  box-shadow:0 10px 24px rgba(0,0,0,.42);
+}
+.nav-btn svg{display:block;transition:transform .18s}
+.nav-btn:hover{
+  color:var(--accent);
+  border-color:var(--accent);
+  transform:translateY(-2px);
+}
+.nav-btn.active{
+  color:var(--accent);
+  border-color:var(--accent);
+  box-shadow:0 8px 22px var(--lux-ring);
+}
+.nav-btn.active svg{transform:scale(1.06)}
+.nav-avatar-dot{
+  width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,#37aee2,#1e96c8);
+  color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  background-size:cover;background-position:center;
+  border:1.5px solid var(--accent);
+}
+
+/* ---------- Main ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--chat-bg);position:relative}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:14px;animation:viewFade .3s ease-out}
+.empty-state .big{opacity:.35}
+.empty-state p{margin:0;font-size:14.5px}
+.chat-view{flex:1;display:flex;flex-direction:column;min-height:0;animation:viewSlideIn .3s cubic-bezier(.2,.9,.3,1)}
+.chat-header{height:60px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--border);position:relative}
+.chat-header .chat-info{min-width:0;flex:1}
+.chat-header .chat-name{font-size:15.5px}
+.chat-status{font-size:12.5px;color:var(--muted);margin-top:1px}
+.chat-status.typing{color:var(--accent)}
+.header-tools{display:flex;gap:2px;position:relative}
+.chat-dropdown{position:absolute;top:46px;right:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.22);padding:6px;z-index:70;min-width:210px;animation:pop .14s cubic-bezier(.2,.9,.3,1)}
+.chat-dropdown button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;background:transparent;color:var(--text);font-size:14px;border-radius:8px;cursor:pointer;text-align:left;font-family:inherit}
+.chat-dropdown button:hover{background:var(--hover)}
+.chat-dropdown button.danger{color:var(--danger)}
+.chat-dropdown button.danger:hover{background:rgba(229,72,77,.12)}
+.chat-dropdown button svg{flex-shrink:0}
+.pinned-bar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:7px 16px;background:var(--panel);border-bottom:1px solid var(--border);cursor:pointer;animation:pop .2s cubic-bezier(.2,.9,.3,1)}
+.pinned-bar .bar{width:3px;height:26px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.pinned-bar .p-body{min-width:0;flex:1}
+.pinned-bar .p-name{color:var(--accent);font-weight:600;font-size:12.5px;display:flex;align-items:center;gap:5px}
+.pinned-bar .p-text{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.messages{flex:1;overflow-y:auto;padding:20px 6% 16px;display:flex;flex-direction:column;gap:3px;scroll-behavior:smooth;background-color:var(--chat-bg)}
+.msg{display:flex;max-width:100%;animation:msgIn .22s cubic-bezier(.2,.9,.3,1)}
+.msg.out{justify-content:flex-end}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.bubble{width:fit-content;max-width:min(520px,72%);padding:8px 12px 6px;border-radius:14px;background:var(--bubble-in);box-shadow:var(--shadow);position:relative;word-wrap:break-word;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.45;font-size:14.5px;cursor:default;-webkit-touch-callout:none}
+.msg.out .bubble{background:var(--bubble-out);color:var(--bubble-out-text);border-bottom-right-radius:5px}
+.msg.in .bubble{border-bottom-left-radius:5px}
+.msg + .msg{margin-top:2px}
+.msg.out + .msg.out .bubble{border-bottom-right-radius:14px}
+.bubble.media{padding:4px;max-width:min(360px,80%);overflow:hidden}
+.bubble.media img.msg-img,.bubble.media video.msg-video{display:block;max-width:100%;max-height:420px;width:auto;height:auto;border-radius:10px;cursor:pointer;background:#000;object-fit:contain}
+.bubble.media video.msg-video{cursor:default}
+.bubble.media .caption{padding:6px 8px 2px;white-space:pre-wrap;font-size:14.5px}
+.bubble.media .quoted{margin:4px 4px 4px}
+.bubble.media .meta{padding:0 8px 4px}
+.bubble.audio{padding:8px 12px 6px;min-width:240px}
+.msg-audio{width:100%;display:block;margin:4px 0 6px}
+.bubble.file{padding:10px 12px 6px;min-width:220px}
+.file-card{display:flex;align-items:center;gap:12px;padding:6px 4px 8px}
+.file-icon{width:44px;height:44px;border-radius:10px;background:rgba(51,144,236,.14);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.msg.out .file-icon{background:rgba(255,255,255,.2);color:#fff}
+.file-info{min-width:0;flex:1}
+.file-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:11.5px;opacity:.75;margin-top:2px}
+.file-dl{background:transparent;border:none;color:var(--accent);cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center}
+.msg.out .file-dl{color:#fff}
+.file-dl:hover{background:rgba(51,144,236,.12)}
+.quoted{border-left:3px solid var(--accent);background:rgba(51,144,236,.10);padding:5px 9px;border-radius:6px;margin-bottom:6px;font-size:13px;cursor:pointer}
+.msg.out .quoted{border-left-color:#fff;background:rgba(255,255,255,.20)}
+.q-name{font-weight:600;font-size:12.5px;color:var(--accent);margin-bottom:1px}
+.msg.out .q-name{color:#fff}
+.q-text{opacity:.85;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.meta{font-size:11px;opacity:.7;display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:3px;user-select:none}
+.meta .edited{opacity:.8}
+.msg.out .meta{color:rgba(255,255,255,.9)}
+.tick{font-size:12px;letter-spacing:-1px}
+.date-sep{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:12px;padding:3px 12px;border-radius:12px;margin:10px 0;letter-spacing:.3px;animation:pop .25s}
+[data-theme="dark"] .date-sep{background:rgba(255,255,255,.1)}
+.composer-area{flex-shrink:0;background:var(--panel);border-top:1px solid var(--border)}
+.reply-bar,.edit-bar{display:flex;align-items:center;gap:10px;padding:8px 16px 0;animation:pop .16s}
+.reply-bar .bar,.edit-bar .bar{width:3px;height:34px;border-radius:2px;flex-shrink:0}
+.reply-bar .bar{background:var(--accent)}
+.edit-bar .bar{background:#f5a623}
+.reply-bar .r-body,.edit-bar .r-body{min-width:0;flex:1}
+.reply-bar .r-name{color:var(--accent);font-weight:600;font-size:12.5px}
+.edit-bar .r-name{color:#f5a623;font-weight:600;font-size:12.5px}
+.reply-bar .r-text,.edit-bar .r-text{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.composer{display:flex;align-items:flex-end;gap:8px;padding:12px 6% 16px;position:relative}
+.attach-btn{width:44px;height:44px;border-radius:50%;color:var(--muted);background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,transform .15s;flex-shrink:0}
+.attach-btn:hover{background:var(--hover);color:var(--accent)}
+.attach-btn.open{transform:rotate(45deg);color:var(--accent)}
+.attach-btn svg{display:block}
+.attach-menu{position:absolute;bottom:74px;left:6%;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.22);padding:8px;z-index:60;min-width:200px;animation:pop .16s cubic-bezier(.2,.9,.3,1)}
+.attach-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;background:transparent;color:var(--text);font-size:14px;border-radius:8px;cursor:pointer;text-align:left;font-family:inherit;transition:background .12s}
+.attach-menu button:hover{background:var(--hover)}
+.attach-menu button svg{color:var(--accent);flex-shrink:0}
+.composer textarea{flex:1;resize:none;border:1px solid var(--border);background:var(--hover);color:var(--text);border-radius:20px;padding:11px 18px;font-size:14.5px;font-family:inherit;line-height:1.4;outline:none;max-height:160px;min-height:44px;transition:border-color .15s,background .15s}
+.composer textarea:focus{border-color:var(--accent);background:var(--panel)}
+.composer textarea::placeholder{color:var(--muted)}
+.send-btn{width:44px;height:44px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s}
+.send-btn svg{display:block}
+.send-btn:hover{background:var(--accent-hover)}
+.send-btn:active{transform:scale(.94)}
+
+/* ---------- Settings & Profile full page (NO BANNER) ---------- */
+.settings-view{flex:1;display:flex;flex-direction:column;min-height:0;background:var(--panel);animation:viewSlideIn .3s cubic-bezier(.2,.9,.3,1)}
+.settings-header{height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid var(--border);background:var(--panel)}
+.settings-header-left{display:flex;align-items:center;gap:12px}
+.settings-header h2{margin:0;font-size:17px;font-weight:600}
+.settings-page{flex:1;overflow-y:auto;padding:14px 20px 96px}
+.sp-section{margin:6px 0 16px}
+.sp-section-title{font-size:12.5px;color:var(--muted);font-weight:600;padding:6px 4px;letter-spacing:.4px;text-transform:uppercase}
+.sp-card{background:var(--hover);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.sp-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--border)}
+.sp-row:last-child{border-bottom:none}
+.sp-row .sp-ico{width:36px;height:36px;border-radius:10px;background:var(--panel);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)}
+.sp-row .sp-body{flex:1;min-width:0}
+.sp-row .sp-title{font-size:14.5px;font-weight:500}
+.sp-row .sp-sub{font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word}
+.sp-row .sp-action{color:var(--accent);font-size:13.5px;font-weight:600;background:transparent;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit;flex-shrink:0}
+.sp-row .sp-action:hover{background:var(--border)}
+.sp-row .sp-action.danger{color:var(--danger)}
+.sp-row .sp-action.danger:hover{background:rgba(229,72,77,.12)}
+.sp-desc{font-size:13px;color:var(--muted);padding:0 4px 12px;line-height:1.5}
+.storage-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin:8px 0 4px}
+.storage-bar-fill{height:100%;background:linear-gradient(90deg,#4ade80,#3390ec);border-radius:4px;width:0;transition:width .6s cubic-bezier(.2,.9,.3,1)}
+
+/* Toggle Switch */
+.switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:.2s}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .slider{background:var(--accent)}
+.switch input:checked + .slider:before{transform:translateX(20px)}
+
+/* Profile view (Preserves original Telechat UI style, NO banner, with full logic from 18186.jpg) */
+.profile-view{max-width:520px;margin:0 auto;padding:6px 0 24px}
+.profile-avatar-big{width:92px;height:92px;border-radius:50%;border:3px solid var(--border);background:linear-gradient(135deg,#37aee2,#1e96c8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;margin:6px auto 0;background-size:cover;background-position:center;box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.profile-view-info{text-align:center;padding:10px 16px 4px}
+.profile-view-name{font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.profile-view-status{font-size:13px;color:var(--muted);margin-top:3px}
+.profile-view-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+.profile-view-actions .p-act{padding:12px 6px;font-size:12px;background:var(--hover);border:1px solid var(--border)}
+.profile-view-actions .p-act:hover{background:var(--panel);border-color:var(--accent)}
+.music-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;background:var(--hover);border:1px solid var(--border);font-size:12.5px;color:var(--text);margin:8px auto 2px;cursor:pointer;transition:border-color .15s}
+.music-pill:hover{border-color:var(--accent)}
+.channel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;font-size:12.5px;font-weight:600;color:var(--accent)}
+.sub-pill{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(51,144,236,.14);color:var(--accent)}
+.profile-tabs{display:flex;gap:8px;margin-top:14px;border-bottom:1px solid var(--border);padding-bottom:8px;align-items:center;justify-content:space-between}
+.profile-tab-group{display:flex;gap:6px}
+.profile-tab-btn{padding:6px 14px;border-radius:999px;border:none;background:var(--hover);color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.profile-tab-btn.active{background:var(--accent);color:#fff}
+
+.edit-form{display:flex;flex-direction:column;gap:14px;max-width:520px;margin:0 auto}
+.edit-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+.edit-form input[type="text"],.edit-form input[type="date"],.edit-form textarea{border:1px solid var(--border);background:var(--hover);color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s,background .15s;resize:none}
+.edit-form input:focus,.edit-form textarea:focus{border-color:var(--accent);background:var(--panel)}
+.upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.upload-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:var(--hover);border:1.5px dashed var(--border);color:var(--accent);font-weight:600;font-size:13.5px;cursor:pointer;transition:border-color .15s,background .15s}
+.upload-btn:hover{border-color:var(--accent);background:rgba(51,144,236,.08)}
+.upload-btn input{display:none}
+.save-btn{background:var(--accent);color:#fff;border:none;padding:12px;border-radius:10px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,transform .1s}
+.save-btn:hover{background:var(--accent-hover)}
+.save-btn:active{transform:scale(.98)}
+
+/* Language list */
+.lang-list{display:flex;flex-direction:column;gap:2px}
+.lang-item{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;background:var(--hover);border:none;border-radius:10px;color:var(--text);font-size:14.5px;font-family:inherit;cursor:pointer;text-align:left;transition:background .12s,transform .12s}
+.lang-item:hover{background:var(--border)}
+.lang-item:active{transform:scale(.99)}
+.lang-item .lang-name{flex:1}
+.lang-item .lang-native{font-size:12.5px;color:var(--muted);margin-top:1px}
+.lang-item .lang-check{color:var(--accent);display:none}
+.lang-item.active .lang-check{display:flex}
+.theme-opts{display:flex;gap:8px;padding:4px 0 0}
+.theme-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--hover);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .12s}
+.theme-opt:hover{border-color:var(--accent);transform:translateY(-2px)}
+.theme-opt.active{border-color:var(--accent);background:rgba(51,144,236,.12);color:var(--accent);font-weight:600}
+
+/* Context menu */
+.ctx-menu{position:fixed;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.22);padding:6px;z-index:80;min-width:210px;animation:pop .14s cubic-bezier(.2,.9,.3,1)}
+.ctx-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:9px 12px;border:none;background:transparent;color:var(--text);font-size:14px;border-radius:8px;cursor:pointer;text-align:left;font-family:inherit}
+.ctx-menu button:hover{background:var(--hover)}
+.ctx-menu button.danger{color:var(--danger)}
+.ctx-menu button.danger:hover{background:rgba(229,72,77,.12)}
+.ctx-menu button svg{flex-shrink:0}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px);animation:fade .18s;padding:16px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes viewFade{from{opacity:0}to{opacity:1}}
+@keyframes viewSlideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes up{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal{background:var(--panel);border-radius:14px;width:380px;max-width:92vw;max-height:92vh;overflow-y:auto;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.3);animation:up .22s cubic-bezier(.2,.9,.3,1)}
+.modal h2{margin:0 0 6px;font-size:18px}
+.modal p{margin:0 0 16px;font-size:13.5px;color:var(--muted)}
+.modal input[type="text"]{width:100%;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--hover);color:var(--text);padding:0 14px;font-size:14.5px;outline:none;font-family:inherit}
+.modal input[type="text"]:focus{border-color:var(--accent);background:var(--panel)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{height:38px;padding:0 18px;border-radius:9px;border:none;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.ghost:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.danger:hover{background:#c93b40}
+
+/* Wallpaper grid */
+.wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px;margin:8px 0 18px}
+.wp-swatch{height:72px;border-radius:12px;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;background-size:cover;background-position:center;transition:transform .16s cubic-bezier(.2,.9,.3,1),border-color .16s,box-shadow .16s;display:flex;align-items:flex-end;justify-content:center}
+.wp-swatch:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.wp-swatch.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(51,144,236,.25)}
+.wp-swatch .lbl{font-size:10px;background:rgba(0,0,0,.5);color:#fff;width:100%;text-align:center;padding:3px 0}
+.wp-custom{display:flex;flex-direction:column;gap:10px}
+.wp-custom label{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted)}
+.wp-custom input[type="color"]{width:48px;height:36px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;padding:2px}
+.wp-custom input[type="text"]{flex:1;height:40px;font-size:13.5px;border:1px solid var(--border);background:var(--hover);color:var(--text);padding:0 12px;border-radius:8px;outline:none;font-family:inherit}
+.wp-custom input[type="text"]:focus{border-color:var(--accent)}
+.wp-upload{display:flex!important;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:10px;cursor:pointer;border:1.5px dashed var(--border);color:var(--accent)!important;font-weight:600;font-size:13.5px;background:var(--hover);transition:border-color .15s,background .15s}
+.wp-upload:hover{border-color:var(--accent);background:rgba(51,144,236,.08)}
+.wp-upload input{display:none}
+.wp-upload svg{flex-shrink:0}
+
+/* Folders */
+.folder-list{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.folder-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--hover);font-size:14px;animation:slideUp .3s backwards}
+.folder-row .ico-f{color:var(--accent);display:flex;align-items:center}
+.folder-row .del-folder{margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center}
+.folder-row .del-folder:hover{background:rgba(229,72,77,.12);color:var(--danger)}
+
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;z-index:120;cursor:zoom-out;animation:fade .18s}
+.lightbox img{max-width:94vw;max-height:94vh;border-radius:8px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .25s cubic-bezier(.2,.9,.3,1)}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(128,140,155,.35);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(128,140,155,.6)}
+
+@media (max-width:820px){
+  .sidebar{width:100%}
+  .app.show-chat .sidebar{display:none}
+  .main{display:none}
+  .app.show-chat .main{display:flex}
+  .back-btn{display:flex!important}
+}
+.back-btn{display:none}
+
+/* Mobile APK Native Optimization */
+html,body{height:100%;height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.app{height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.sidebar{height:100%}
+.bottom-nav-wrap{bottom:calc(16px + env(safe-area-inset-bottom))}
+.composer{padding:10px 12px calc(12px + env(safe-area-inset-bottom))}
+.messages{padding:14px 12px 16px}
+.bubble{max-width:82%}
+
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <aside class="sidebar">
+    <header class="sidebar-header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <h1 id="brandTitle">Telechat</h1>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="netSimBtn" title="Toggle Online / Waiting for network">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        </button>
+        <button class="icon-btn" id="themeBtn" title="Theme">
+          <svg class="ico-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="ico-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button class="icon-btn" id="newChatBtn" title="New chat">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="chatsPanel" class="sidebar-panel">
+      <div class="search-wrap"><input id="searchInput" type="text" autocomplete="off" /></div>
+      <div class="folder-chips" id="folderChips"></div>
+      <div class="chat-list" id="chatList"></div>
+    </div>
+
+    <div id="settingsPanel" class="sidebar-panel hidden">
+      <div class="settings-profile-card" id="settingsProfileCard"></div>
+      <div class="settings-group" id="settingsGroup"></div>
+    </div>
+
+    <div id="profileSidebarPanel" class="sidebar-panel hidden">
+      <div id="profileSidebarContent" style="padding:10px 14px 28px"></div>
+    </div>
+
+    <!-- 3 Floating Centered Luxury Squircle Buttons (Chats, Settings, Profile) -->
+    <div class="bottom-nav-wrap">
+      <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-btn active" data-nav="chats" title="Chats">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.5-4.4A8.4 8.4 0 0 1 3.5 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/>
+            <path d="M8.5 11.5h7M8.5 8.5h4.5"/>
+          </svg>
+          <span data-i18n="navChats">Chats</span>
+        </button>
+
+        <button class="nav-btn" data-nav="settings" title="Settings">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.2"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span data-i18n="navSettings">Settings</span>
+        </button>
+
+        <button class="nav-btn" data-nav="profile" title="Profile">
+          <div class="nav-avatar-dot" id="navAvatarDot">W</div>
+          <span data-i18n="profile">Profile</span>
+        </button>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="empty-state" id="emptyState">
+      <div class="big">
+        <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/></svg>
+      </div>
+      <p id="emptyStateText">Select a chat to start messaging</p>
+    </div>
+
+    <div class="chat-view hidden" id="chatView">
+      <header class="chat-header">
+        <button class="icon-btn back-btn" id="backBtn" title="Back">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="avatar sm" id="chatAvatar"></div>
+        <div class="chat-info">
+          <div class="chat-name" id="chatName"></div>
+          <div class="chat-status" id="chatStatus"></div>
+        </div>
+        <div class="header-tools">
+          <button class="icon-btn" id="chatMenuBtn" title="More">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+          </button>
+          <div class="chat-dropdown hidden" id="chatDropdown">
+            <button data-act="wallpaper">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.5-4.5L6 21"/></svg>
+              <span data-i18n="wallpaper">Wallpaper</span>
+            </button>
+            <button data-act="clear" class="danger">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              <span data-i18n="clearHistory">Clear history</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="pinned-bar hidden" id="pinnedBar">
+        <div class="bar"></div>
+        <div class="p-body">
+          <div class="p-name">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2H6z"/></svg>
+            <span data-i18n="pinnedMessage">Pinned message</span>
+          </div>
+          <div class="p-text" id="pinnedText"></div>
+        </div>
+        <button class="icon-btn" id="unpinBtn" title="Unpin">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="composer-area">
+        <div class="reply-bar hidden" id="replyBar">
+          <div class="bar"></div>
+          <div class="r-body"><div class="r-name" id="replyName"></div><div class="r-text" id="replyText"></div></div>
+          <button class="icon-btn" id="replyClose" title="Cancel">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="edit-bar hidden" id="editBar">
+          <div class="bar"></div>
+          <div class="r-body"><div class="r-name" id="editLabel">Edit message</div><div class="r-text" id="editPreview"></div></div>
+          <button class="icon-btn" id="editClose" title="Cancel">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="composer">
+          <button class="attach-btn" id="attachBtn" title="Attach">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <div class="attach-menu hidden" id="attachMenu">
+            <button data-upload="photo">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.5-4.5L6 21"/></svg>
+              <span data-i18n="attachPhoto">Photo</span>
+            </button>
+            <button data-upload="video">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              <span data-i18n="attachVideo">Video</span>
+            </button>
+            <button data-upload="audio">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <span data-i18n="attachAudio">Audio</span>
+            </button>
+            <button data-upload="file">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span data-i18n="attachFile">File</span>
+            </button>
+          </div>
+          <textarea id="msgInput" rows="1"></textarea>
+          <button class="send-btn" id="sendBtn" title="Send">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" hidden />
+        <input type="file" id="videoInput" accept="video/*" hidden />
+        <input type="file" id="audioInput" accept="audio/*" hidden />
+        <input type="file" id="fileInput" hidden />
+      </div>
+    </div>
+
+    <div class="settings-view hidden" id="settingsView">
+      <header class="settings-header">
+        <div class="settings-header-left">
+          <button class="icon-btn" id="settingsBackBtn" title="Back">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <h2 id="settingsTitle"></h2>
+        </div>
+        <div id="settingsHeaderRight"></div>
+      </header>
+      <div class="settings-page" id="settingsPage"></div>
+    </div>
+  </main>
+</div>
+
+<!-- New Chat Modal -->
+<div class="overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <h2 id="newChatTitle">New chat</h2>
+    <p id="newChatDesc">Enter a name to start a conversation</p>
+    <input type="text" id="newChatName" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelNewChat">Cancel</button>
+      <button class="btn primary" id="createChat">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- In-App Input / Confirm Dialog -->
+<div class="overlay hidden" id="dialogOverlay">
+  <div class="modal">
+    <h2 id="dialogTitle">Title</h2>
+    <p id="dialogDesc"></p>
+    <input type="text" id="dialogInput" class="hidden" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn ghost" id="dialogCancel">Cancel</button>
+      <button class="btn primary" id="dialogOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctx-menu hidden" id="ctxMenu">
+  <button data-act="reply"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg><span data-i18n="reply">Reply</span></button>
+  <button data-act="copy"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy">Copy</span></button>
+  <button data-act="edit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span data-i18n="edit">Edit</span></button>
+  <button data-act="save"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span data-i18n="saveToSaved">Save to Saved</span></button>
+  <button data-act="pin"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2H6z"/></svg><span data-i18n="pin">Pin</span></button>
+  <button data-act="delete" class="danger"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span data-i18n="delete">Delete</span></button>
+</div>
+
+<div class="lightbox hidden" id="lightbox"><img id="lightboxImg" alt="" /></div>
+
+<script type="module">
+import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, push, set, get, query, limitToLast, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ================= I18N (All 5 Languages Preserved) ================= */
+const I18N = {
+  my:{
+    firebaseConfigTitle:'Firebase ချိတ်ဆက်မှု',firebaseSaveConnect:'သိမ်းပြီး ချိတ်ဆက်မည်',firebaseSignInGoogle:'Sign in with Google',firebaseSignOut:'Sign out',firebaseStatusNotConfigured:'Not configured',firebaseStatusConnected:'Connected (anonymous)',firebaseStatusConnectedAs:'Connected as',firebaseStatusError:'Error',firebaseTestConnection:'Test connection',firebaseRoomCode:'Secret Room Code',
+    navChats:'Chats',navSettings:'Settings',searchChats:'Chat များ ရှာဖွေရန်...',
+    you:'သင်',youSub:'Telechat အသုံးပြုသူ',profile:'Profile',account:'Account',
+    editProfile:'Profile ပြင်ဆင်ရန်',setPhoto:'ပုံထည့်',editInfo:'အချက်အလက်',settings:'Settings',
+    bio:'Bio',username:'Username',mobile:'Mobile',birthday:'မွေးနေ့',music:'Music Status',channel:'Channel',
+    profilePhoto:'Profile ပုံ',save:'သိမ်းရန်',
+    chatSettings:'Chat Settings',dataStorage:'Data and Storage',chatFolders:'Chat Folders',
+    language:'Language',messageLanguage:'Message Language',
+    notifications:'Notifications and Sounds',privacy:'Privacy and Security',
+    devices:'Devices',powerSaving:'Power Saving',firebaseSync:'Firebase & VS Code Live Sync',faq:'Telechat FAQ',
+    lastSeen:'မကြာမီက တွေ့ရှိခဲ့သည်',typing:'ရေးနေသည်...',online:'online',waitingNet:'Waiting for network',
+    writeMessage:'မက်ဆေ့ချ် ရေးပါ...',emptyState:'စကားပြောရန် chat တစ်ခုကို ရွေးပါ',
+    reply:'ပြန်ကြားရန်',copy:'ကူးယူရန်',edit:'ပြင်ဆင်ရန်',
+    saveToSaved:'သိမ်းဆည်းရန်',pin:'ပင်ရန်',unpin:'ပင်ဖြုတ်ရန်',delete:'ဖျက်ရန်',
+    pinnedMessage:'ပင်ထားသော မက်ဆေ့ချ်',
+    wallpaper:'နောက်ခံပုံ',clearHistory:'Chat မှတ်တမ်း ရှင်းရန်',
+    clearHistoryConfirm:'ဤ chat ရှိ မက်ဆေ့ချ်အားလုံးကို ဖျက်မှာ သေချာလား?',
+    newChatTitle:'Chat အသစ် စတင်ရန်',newChatDesc:'ဆက်သွယ်မည့်သူ၏ နာမည်ကို ရိုက်ထည့်ပါ',
+    newChatPlaceholder:'ဥပမာ — Aung Aung',
+    cancel:'မလုပ်တော့ပါ',create:'ဖန်တီးရန်',
+    wallpaperTitle:'Chat နောက်ခံပုံ',wallpaperDesc:'Chat ၏ နောက်ခံကို ရွေးချယ်ပါ',
+    localImage:'စက်ထဲမှ ပုံရွေးရန်',customColor:'စိတ်ကြိုက်အရောင်',imageUrl:'ပုံ URL',
+    applyAll:'အားလုံးအတွက် သတ်မှတ်ရန်',close:'ပိတ်',
+    theme:'အပြင်အဆင်',themeSub:'App အရောင်အသွေး',day:'နေ့',night:'ည',
+    storageUsed:'သိမ်းဆည်းမှု ပမာဏ',clear:'ရှင်းရန်',clearData:'Data ရှင်းရန်',
+    clearCacheConfirm:'ဖျက်လိုက်သော data များ (ပုံ၊ ဗီဒီယို၊ wallpaper အားလုံး) ကို ဖျက်မှာ သေချာလား?',
+    usedOf:'သုံးထားသည်',of:'/',
+    foldersTitle:'Chat Folders',foldersDesc:'Chat များကို folder ခွဲထားနိုင်သည်',
+    addFolder:'Folder အသစ်',folderNamePrompt:'Folder အမည်',
+    languageTitle:'Language',languageDesc:'App တစ်ခုလုံး၏ ဘာသာစကား',
+    messageLanguageTitle:'Message Language',messageLanguageDesc:'အလိုအလျောက် ဖြေကြားချက်များ၏ ဘာသာစကား',
+    auto:'အလိုအလျောက်',editMessage:'မက်ဆေ့ချ် ပြင်ဆင်ရန်',
+    toastCopied:'ကူးယူပြီးပါပြီ',toastCopyFail:'ကူးယူ၍ မရပါ',
+    toastSaved:'Saved Messages ထဲ သိမ်းလိုက်ပါပြီ',toastCacheCleared:'Data ရှင်းလိုက်ပါပြီ',
+    toastWallpaperAll:'Wallpaper ကို chat အားလုံးအတွက် သတ်မှတ်ပြီးပါပြီ',
+    toastStorageFull:'Storage ပြည့်နေပါသည် — ပုံအရွယ်အစား လျှော့ပါ',
+    toastNotImage:'ပုံဖိုင် မဟုတ်ပါ',toastImageRead:'ဖိုင် ဖတ်မရပါ',
+    toastNoChat:'Chat တစ်ခုကို အရင်ဖွင့်ပါ',chooseChat:'စကားပြောဖို့ chat တစ်ခုကို ရွေးပါ',
+    toastFileTooBig:'ဖိုင် အရွယ်အစား ကြီးလွန်းသည်',toastProfileSaved:'Profile သိမ်းပြီးပါပြီ',
+    attachPhoto:'ပုံ',attachVideo:'ဗီဒီယို',attachAudio:'အသံ',attachFile:'ဖိုင်',
+    all:'All'
+  },
+  en:{
+    firebaseConfigTitle:'Firebase Configuration',firebaseSaveConnect:'Save & Connect',firebaseSignInGoogle:'Sign in with Google',firebaseSignOut:'Sign out',firebaseStatusNotConfigured:'Not configured',firebaseStatusConnected:'Connected (anonymous)',firebaseStatusConnectedAs:'Connected as',firebaseStatusError:'Error',firebaseTestConnection:'Test connection',firebaseRoomCode:'Secret Room Code',
+    navChats:'Chats',navSettings:'Settings',searchChats:'Search chats...',
+    you:'You',youSub:'Telechat user',profile:'Profile',account:'Account',
+    editProfile:'Edit Profile',setPhoto:'Set Photo',editInfo:'Edit Info',settings:'Settings',
+    bio:'Bio',username:'Username',mobile:'Mobile',birthday:'Birthday',music:'Music Status',channel:'Channel',
+    profilePhoto:'Profile Photo',save:'Save',
+    chatSettings:'Chat Settings',dataStorage:'Data and Storage',chatFolders:'Chat Folders',
+    language:'Language',messageLanguage:'Message Language',
+    notifications:'Notifications and Sounds',privacy:'Privacy and Security',
+    devices:'Devices',powerSaving:'Power Saving',firebaseSync:'Firebase & VS Code Live Sync',faq:'Telechat FAQ',
+    lastSeen:'last seen recently',typing:'typing...',online:'online',waitingNet:'Waiting for network',
+    writeMessage:'Write a message...',emptyState:'Select a chat to start messaging',
+    reply:'Reply',copy:'Copy',edit:'Edit',
+    saveToSaved:'Save to Saved',pin:'Pin',unpin:'Unpin',delete:'Delete',
+    pinnedMessage:'Pinned message',wallpaper:'Wallpaper',clearHistory:'Clear history',
+    clearHistoryConfirm:'Delete all messages in this chat?',
+    newChatTitle:'New chat',newChatDesc:'Enter a name to start a conversation',
+    newChatPlaceholder:'e.g. John Doe',cancel:'Cancel',create:'Create',
+    wallpaperTitle:'Chat Wallpaper',wallpaperDesc:'Choose a background for this chat',
+    localImage:'Choose local image',customColor:'Custom Color',imageUrl:'Image URL',
+    applyAll:'Apply to all',close:'Close',
+    theme:'Theme',themeSub:'App appearance',day:'Day',night:'Night',
+    storageUsed:'Storage used',clear:'Clear',clearData:'Clear data',
+    clearCacheConfirm:'Delete all cached media (photos, videos, wallpapers)?',
+    usedOf:'used of',of:'of',
+    foldersTitle:'Chat Folders',foldersDesc:'Organize your chats into folders',
+    addFolder:'New Folder',folderNamePrompt:'Folder name',
+    languageTitle:'Language',languageDesc:'Language of the whole app',
+    messageLanguageTitle:'Message Language',messageLanguageDesc:'Language of automatic replies',
+    auto:'Auto',editMessage:'Edit message',
+    toastCopied:'Copied',toastCopyFail:'Could not copy',
+    toastSaved:'Saved to Saved Messages',toastCacheCleared:'Data cleared',
+    toastWallpaperAll:'Wallpaper applied to all chats',
+    toastStorageFull:'Storage is full — try a smaller image',
+    toastNotImage:'Not an image file',toastImageRead:'Could not read file',
+    toastNoChat:'Open a chat first',chooseChat:'Select a chat to start messaging',
+    toastFileTooBig:'File too large',toastProfileSaved:'Profile saved',
+    attachPhoto:'Photo',attachVideo:'Video',attachAudio:'Audio',attachFile:'File',
+    all:'All'
+  },
+  ko:{
+    firebaseConfigTitle:'Firebase 설정',firebaseSaveConnect:'저장 및 연결',firebaseSignInGoogle:'Sign in with Google',firebaseSignOut:'로그아웃',firebaseStatusNotConfigured:'설정되지 않음',firebaseStatusConnected:'연결됨 (익명)',firebaseStatusConnectedAs:'연결된 계정:',firebaseStatusError:'오류',firebaseTestConnection:'연결 테스트',firebaseRoomCode:'비밀 방 코드',
+    navChats:'채팅',navSettings:'설정',searchChats:'채팅 검색...',
+    you:'나',youSub:'Telechat 사용자',profile:'프로필',account:'Account',
+    editProfile:'프로필 편집',setPhoto:'사진',editInfo:'정보 편집',settings:'설정',
+    bio:'소개',username:'사용자명',mobile:'휴대전화',birthday:'생일',music:'뮤직',channel:'채널',
+    profilePhoto:'프로필 사진',save:'저장',
+    chatSettings:'채팅 설정',dataStorage:'데이터 및 저장공간',chatFolders:'채팅 폴더',
+    language:'언어',messageLanguage:'메시지 언어',
+    notifications:'알림 및 소리',privacy:'개인정보 및 보안',devices:'기기',powerSaving:'절전 모드',firebaseSync:'Firebase & VS Code 동기화',faq:'FAQ',
+    lastSeen:'최근에 접속함',typing:'입력 중...',online:'온라인',waitingNet:'Waiting for network',
+    writeMessage:'메시지를 입력하세요...',emptyState:'대화할 채팅을 선택하세요',
+    reply:'답장',copy:'복사',edit:'편집',saveToSaved:'저장됨에 저장',pin:'고정',unpin:'고정 해제',delete:'삭제',
+    pinnedMessage:'고정된 메시지',wallpaper:'배경화면',clearHistory:'대화 내용 삭제',clearHistoryConfirm:'모든 메시지를 삭제할까요?',
+    newChatTitle:'새 채팅',newChatDesc:'이름을 입력하세요',newChatPlaceholder:'예: 홍길동',cancel:'취소',create:'만들기',
+    wallpaperTitle:'채팅 배경화면',wallpaperDesc:'배경을 선택하세요',localImage:'로컬 이미지',customColor:'색상',imageUrl:'이미지 URL',
+    applyAll:'모두에게 적용',close:'닫기',theme:'테마',themeSub:'앱 모양',day:'낮',night:'밤',
+    storageUsed:'사용 중인 저장공간',clear:'지우기',clearData:'데이터 지우기',clearCacheConfirm:'캐시를 삭제할까요?',
+    usedOf:'사용 /',of:'/',foldersTitle:'채팅 폴더',foldersDesc:'채팅을 폴더로 정리하세요',addFolder:'새 폴더',folderNamePrompt:'폴더 이름',
+    languageTitle:'언어',languageDesc:'앱 전체의 언어',messageLanguageTitle:'메시지 언어',messageLanguageDesc:'자동 답장의 언어',
+    auto:'자동',editMessage:'메시지 편집',toastCopied:'복사됨',toastCopyFail:'실패',toastSaved:'저장됨',toastCacheCleared:'삭제됨',
+    toastWallpaperAll:'적용됨',toastStorageFull:'저장공간 부족',toastNotImage:'이미지 아님',toastImageRead:'읽기 오류',
+    toastNoChat:'먼저 채팅을 여세요',chooseChat:'채팅을 선택하세요',toastFileTooBig:'파일이 너무 큽니다',toastProfileSaved:'저장됨',
+    attachPhoto:'사진',attachVideo:'동영상',attachAudio:'오디오',attachFile:'파일',all:'전체'
+  },
+  ja:{
+    firebaseConfigTitle:'Firebase 設定',firebaseSaveConnect:'保存して接続',firebaseSignInGoogle:'Sign in with Google',firebaseSignOut:'ログアウト',firebaseStatusNotConfigured:'未設定',firebaseStatusConnected:'接続済み (匿名)',firebaseStatusConnectedAs:'接続中:',firebaseStatusError:'エラー',firebaseTestConnection:'接続テスト',firebaseRoomCode:'シークレットルームコード',
+    navChats:'チャット',navSettings:'設定',searchChats:'チャットを検索...',
+    you:'あなた',youSub:'Telechat ユーザー',profile:'プロフィール',account:'Account',
+    editProfile:'プロフィール編集',setPhoto:'写真',editInfo:'情報編集',settings:'設定',
+    bio:'自己紹介',username:'ユーザー名',mobile:'電話番号',birthday:'誕生日',music:'音楽',channel:'チャンネル',
+    profilePhoto:'プロフィール写真',save:'保存',
+    chatSettings:'チャット設定',dataStorage:'データとストレージ',chatFolders:'チャットフォルダ',
+    language:'言語',messageLanguage:'メッセージ言語',
+    notifications:'通知とサウンド',privacy:'プライバシーとセキュリティ',devices:'デバイス',powerSaving:'省電力',firebaseSync:'Firebase & VS Code 同期',faq:'FAQ',
+    lastSeen:'最近オンライン',typing:'入力中...',online:'オンライン',waitingNet:'Waiting for network',
+    writeMessage:'メッセージを入力...',emptyState:'チャットを選択してください',
+    reply:'返信',copy:'コピー',edit:'編集',saveToSaved:'保存済みに追加',pin:'ピン留め',unpin:'ピン解除',delete:'削除',
+    pinnedMessage:'ピン留めメッセージ',wallpaper:'壁紙',clearHistory:'履歴を削除',clearHistoryConfirm:'すべて削除しますか？',
+    newChatTitle:'新しいチャット',newChatDesc:'名前を入力',newChatPlaceholder:'山田 太郎',cancel:'キャンセル',create:'作成',
+    wallpaperTitle:'チャット壁紙',wallpaperDesc:'背景を選択',localImage:'ローカル画像',customColor:'カラー',imageUrl:'画像URL',
+    applyAll:'すべてに適用',close:'閉じる',theme:'テーマ',themeSub:'外観',day:'昼',night:'夜',
+    storageUsed:'使用ストレージ',clear:'消去',clearData:'データを消去',clearCacheConfirm:'キャッシュを消去しますか？',
+    usedOf:'使用 /',of:'/',foldersTitle:'チャットフォルダ',foldersDesc:'フォルダで整理',addFolder:'新しいフォルダ',folderNamePrompt:'フォルダ名',
+    languageTitle:'言語',languageDesc:'アプリ全体の言語',messageLanguageTitle:'メッセージ言語',messageLanguageDesc:'自動返信の言語',
+    auto:'自動',editMessage:'メッセージを編集',toastCopied:'コピーしました',toastCopyFail:'失敗',toastSaved:'保存しました',toastCacheCleared:'消去しました',
+    toastWallpaperAll:'適用しました',toastStorageFull:'容量不足',toastNotImage:'画像ではありません',toastImageRead:'読み込めません',
+    toastNoChat:'先にチャットを開いてください',chooseChat:'チャットを選択してください',toastFileTooBig:'大きすぎます',toastProfileSaved:'保存しました',
+    attachPhoto:'写真',attachVideo:'動画',attachAudio:'音声',attachFile:'ファイル',all:'すべて'
+  },
+  ru:{
+    firebaseConfigTitle:'Настройка Firebase',firebaseSaveConnect:'Сохранить и подключить',firebaseSignInGoogle:'Sign in with Google',firebaseSignOut:'Выйти',firebaseStatusNotConfigured:'Не настроено',firebaseStatusConnected:'Подключено (анонимно)',firebaseStatusConnectedAs:'Подключено как',firebaseStatusError:'Ошибка',firebaseTestConnection:'Проверить соединение',firebaseRoomCode:'Код комнаты',
+    navChats:'Чаты',navSettings:'Настройки',searchChats:'Поиск чатов...',
+    you:'Вы',youSub:'Пользователь Telechat',profile:'Профиль',account:'Account',
+    editProfile:'Редактировать профиль',setPhoto:'Фото',editInfo:'Изменить',settings:'Настройки',
+    bio:'О себе',username:'Имя пользователя',mobile:'Телефон',birthday:'День рождения',music:'Музыка',channel:'Канал',
+    profilePhoto:'Фото профиля',save:'Сохранить',
+    chatSettings:'Настройки чата',dataStorage:'Данные и память',chatFolders:'Папки чатов',
+    language:'Язык',messageLanguage:'Язык сообщений',
+    notifications:'Уведомления и звуки',privacy:'Конфиденциальность',devices:'Устройства',powerSaving:'Энергосбережение',firebaseSync:'Firebase & VS Code',faq:'Вопросы о Telechat',
+    lastSeen:'был(а) недавно',typing:'печатает...',online:'онлайн',waitingNet:'Waiting for network',
+    writeMessage:'Написать сообщение...',emptyState:'Выберите чат, чтобы начать',
+    reply:'Ответить',copy:'Копировать',edit:'Изменить',saveToSaved:'В Избранное',pin:'Закрепить',unpin:'Открепить',delete:'Удалить',
+    pinnedMessage:'Закреплённое сообщение',wallpaper:'Обои',clearHistory:'Очистить историю',clearHistoryConfirm:'Удалить все сообщения?',
+    newChatTitle:'Новый чат',newChatDesc:'Введите имя',newChatPlaceholder:'Иван Иванов',cancel:'Отмена',create:'Создать',
+    wallpaperTitle:'Обои чата',wallpaperDesc:'Выберите фон',localImage:'Выбрать изображение',customColor:'Свой цвет',imageUrl:'URL изображения',
+    applyAll:'Применить ко всем',close:'Закрыть',theme:'Тема',themeSub:'Оформление',day:'День',night:'Ночь',
+    storageUsed:'Использовано памяти',clear:'Очистить',clearData:'Очистить данные',clearCacheConfirm:'Удалить все медиа?',
+    usedOf:'из',of:'из',foldersTitle:'Папки чатов',foldersDesc:'Организуйте чаты',addFolder:'Новая папка',folderNamePrompt:'Имя папки',
+    languageTitle:'Язык',languageDesc:'Язык приложения',messageLanguageTitle:'Язык сообщений',messageLanguageDesc:'Язык авто-ответов',
+    auto:'Авто',editMessage:'Изменить сообщение',toastCopied:'Скопировано',toastCopyFail:'Ошибка',toastSaved:'Сохранено',toastCacheCleared:'Очищено',
+    toastWallpaperAll:'Обои применены',toastStorageFull:'Память заполнена',toastNotImage:'Не изображение',toastImageRead:'Ошибка чтения',
+    toastNoChat:'Откройте чат',chooseChat:'Выберите чат',toastFileTooBig:'Файл слишком большой',toastProfileSaved:'Сохранено',
+    attachPhoto:'Фото',attachVideo:'Видео',attachAudio:'Аудио',attachFile:'Файл',all:'Все'
+  }
+};
+
+const LANG_NAMES = {
+  my:{native:'မြန်မာ',en:'Burmese'},
+  en:{native:'English',en:'English'},
+  ko:{native:'한국어',en:'Korean'},
+  ja:{native:'日本語',en:'Japanese'},
+  ru:{native:'Русский',en:'Russian'}
+};
+
+/* ================= STATE ================= */
+const STORAGE_KEY='telechat_db_v8';
+const THEME_KEY='tg_lite_theme';
+const LANG_KEY='tg_lite_lang';
+const MSGLANG_KEY='tg_lite_msglang';
+const SAVED_ID='__saved__';
+const MAX_FILE_SIZE=10*1024*1024;
+
+let db={
+  chats:[],activeId:null,wallpaper:{mode:'default'},
+  folders:[{id:'all',name:'All'}],activeFolder:'all',
+  profile:{
+    name:'White Cloud',
+    username:'Blackgod4',
+    mobile:'+95 9681141470',
+    bio:'Telechat Creator & Music Lover',
+    birthday:'2012-04-03',
+    music:'Lil Kee Boi – Stay Forever',
+    channelName:'White Cloud music',
+    channelLink:'@LyBot https://t.me/LyDBot',
+    channelSubs:4,
+    avatar:'',
+    posts:[
+      {id:'p1',text:'Welcome to my Telechat Profile ✨',time:Date.now()-3600000,archived:false}
+    ]
+  },
+  tgSettings:{
+    notiEnabled:true,notiSound:true,notiVibrate:true,inAppPreview:true,
+    privacyLastSeen:'Everybody',privacyPhoto:'Everybody',passcodeEnabled:false,twoStepEnabled:false,
+    powerSaving:false
+  },
+  firebase:{
+    apiKey:'AIzaSyCWqg-RYeB8c4hMLB933x6qceNVye4mhAM',authDomain:'chat-app-dbe35.firebaseapp.com',databaseURL:'https://chat-app-dbe35-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'chat-app-dbe35',storageBucket:'chat-app-dbe35.firebasestorage.app',messagingSenderId:'377108785075',appId:'1:377108785075:web:ed3a926ccac62d1e5d0dc6',roomCode:'code3412',connected:false,otaUrl:'',googleUser:null
+  }
+};
+let currentLang=localStorage.getItem(LANG_KEY)||'my';
+let messageLang=localStorage.getItem(MSGLANG_KEY)||'auto';
+let typingTimers={};
+let ctxMsg=null;
+let longPressTimer=null;
+let editingId=null;
+let settingsStack=[];
+let profileSubTab='posts';
+let simulatedOffline=false;
+let fbApp=null, fbAuth=null, fbDb=null, fbUid=null, fbListening=false, fbAuthBound=false, fbInitTimer=null;
+let fbStatusState='not_configured', fbStatusMsg='';
+const appStartTime=Date.now();
+
+/* ================= HELPERS ================= */
+function t(k){return (I18N[currentLang]&&I18N[currentLang][k])||I18N.en[k]||k}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function avatarColor(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return `hsl(${h},62%,52%)`}
+function initials(n){const p=n.trim().split(/\s+/);if(p.length===1)return p[0].slice(0,2).toUpperCase();return (p[0][0]+p[p.length-1][0]).toUpperCase()}
+function fmtTime(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function fmtListTime(ts){const d=new Date(ts),now=new Date();if(d.toDateString()===now.toDateString())return fmtTime(ts);const dd=String(d.getDate()).padStart(2,'0');const mm=String(d.getMonth()+1).padStart(2,'0');if(d.getFullYear()===now.getFullYear())return `${dd}/${mm}`;return `${dd}/${mm}/${String(d.getFullYear()).slice(2)}`}
+function fmtDateSep(ts){const d=new Date(ts);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`}
+function fmtBytes(b){if(!b||b<0)return '0 B';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';if(b<1073741824)return (b/1048576).toFixed(2)+' MB';return (b/1073741824).toFixed(2)+' GB'}
+function formatBirthdayWithAge(bday){
+  if(!bday)return '';
+  const d=new Date(bday);if(isNaN(d))return bday;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mStr=months[d.getMonth()]||'Apr';
+  const dd=String(d.getDate()).padStart(2,'0');
+  const yr=d.getFullYear();
+  const age=Math.max(0,Math.floor((Date.now()-d.getTime())/(365.25*24*3600*1000)));
+  return `${mStr} ${dd}, ${yr} (${age} years old)`;
+}
+
+/* ================= IN-APP DIALOG ================= */
+function openDialog({title,desc='',withInput=false,placeholder='',defaultVal='',danger=false}){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('dialogOverlay');
+    const ti=document.getElementById('dialogTitle');
+    const de=document.getElementById('dialogDesc');
+    const inp=document.getElementById('dialogInput');
+    const ok=document.getElementById('dialogOk');
+    const ca=document.getElementById('dialogCancel');
+    ti.textContent=title;de.textContent=desc;
+    ok.className='btn '+(danger?'danger':'primary');
+    ok.textContent='OK';ca.textContent=t('cancel');
+    if(withInput){inp.classList.remove('hidden');inp.placeholder=placeholder;inp.value=defaultVal;setTimeout(()=>inp.focus(),40)}
+    else{inp.classList.add('hidden')}
+    ov.classList.remove('hidden');
+    const cleanup=(val)=>{ov.classList.add('hidden');ok.onclick=null;ca.onclick=null;resolve(val)};
+    ok.onclick=()=>cleanup(withInput?inp.value.trim():true);
+    ca.onclick=()=>cleanup(withInput?null:false);
+  });
+}
+
+/* ================= NETWORK STATUS (Telechat <-> Waiting for network) ================= */
+function isOnlineNow(){
+  return navigator.onLine && !simulatedOffline;
+}
+function updateNetworkTitle(){
+  const h1=document.getElementById('brandTitle');
+  if(!h1)return;
+  if(isOnlineNow()){
+    h1.textContent='Telechat';
+    h1.classList.remove('offline');
+  }else{
+    h1.textContent=t('waitingNet');
+    h1.classList.add('offline');
+  }
+}
+window.addEventListener('online',updateNetworkTitle);
+window.addEventListener('offline',updateNetworkTitle);
+document.getElementById('netSimBtn').addEventListener('click',()=>{
+  simulatedOffline=!simulatedOffline;
+  updateNetworkTitle();
+  if(!profileSidebarPanel.classList.contains('hidden'))profileSidebarContent.innerHTML=buildProfileMarkup();
+  if(!settingsView.classList.contains('hidden'))renderSettingsPage();
+  flashToast(isOnlineNow()?'🟢 Network Connected (Telechat)':'🟠 Offline (Waiting for network)');
+});
+
+/* ================= PERSISTENCE ================= */
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(db));return true}
+  catch(e){flashToast(t('toastStorageFull'));return false}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){const p=JSON.parse(raw);if(p&&Array.isArray(p.chats))db=Object.assign(db,p)}
+  }catch(e){}
+  if(!db.wallpaper)db.wallpaper={mode:'default'};
+  if(!Array.isArray(db.folders)||!db.folders.length)db.folders=[{id:'all',name:'All'}];
+  if(!db.activeFolder)db.activeFolder='all';
+  if(!db.profile)db.profile={name:'White Cloud',username:'Blackgod4',mobile:'+95 9681141470',bio:'',birthday:'2012-04-03',music:'Lil Kee Boi – Stay Forever',channelName:'White Cloud music',channelLink:'@LyBot https://t.me/LyDBot',channelSubs:4,avatar:'',posts:[]};
+  if(!Array.isArray(db.profile.posts))db.profile.posts=[{id:'p1',text:'Welcome to my Telechat Profile ✨',time:Date.now()-3600000,archived:false}];
+  if(!db.tgSettings)db.tgSettings={notiEnabled:true,notiSound:true,notiVibrate:true,inAppPreview:true,privacyLastSeen:'Everybody',privacyPhoto:'Everybody',passcodeEnabled:false,twoStepEnabled:false,powerSaving:false};
+  if(!db.firebase)db.firebase={apiKey:'AIzaSyCWqg-RYeB8c4hMLB933x6qceNVye4mhAM',authDomain:'chat-app-dbe35.firebaseapp.com',databaseURL:'https://chat-app-dbe35-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'chat-app-dbe35',storageBucket:'chat-app-dbe35.firebasestorage.app',messagingSenderId:'377108785075',appId:'1:377108785075:web:ed3a926ccac62d1e5d0dc6',roomCode:'code3412',connected:false,otaUrl:'',googleUser:null};
+  if(!db.firebase.apiKey)db.firebase.apiKey='AIzaSyCWqg-RYeB8c4hMLB933x6qceNVye4mhAM';
+  if(!db.firebase.authDomain)db.firebase.authDomain='chat-app-dbe35.firebaseapp.com';
+  if(!db.firebase.databaseURL)db.firebase.databaseURL='https://chat-app-dbe35-default-rtdb.asia-southeast1.firebasedatabase.app';
+  if(!db.firebase.projectId)db.firebase.projectId='chat-app-dbe35';
+  if(!db.firebase.storageBucket)db.firebase.storageBucket='chat-app-dbe35.firebasestorage.app';
+  if(!db.firebase.messagingSenderId)db.firebase.messagingSenderId='377108785075';
+  if(!db.firebase.appId)db.firebase.appId='1:377108785075:web:ed3a926ccac62d1e5d0dc6';
+  if(!db.firebase.roomCode||db.firebase.roomCode==='code3412')db.firebase.roomCode='code3412';
+  if(typeof db.firebase.googleUser==='undefined')db.firebase.googleUser=null;
+  const allF=db.folders.find(f=>f.id==='all');if(allF)allF.name=t('all');
+  if(db.chats.length===0){
+    db.chats.push({id:uid(),name:'Telechat',official:true,messages:[{id:uid(),text:'မင်္ဂလာပါ! Telechat မှ ကြိုဆိုပါတယ်။',sender:'them',time:Date.now(),status:'read'}],unread:0,updatedAt:Date.now()});
+    save();
+  }
+  if(!db.chats.some(c=>c.id===SAVED_ID)){
+    db.chats.unshift({id:SAVED_ID,name:'Saved Messages',saved:true,messages:[],unread:0,updatedAt:Date.now()-1});
+    save();
+  }
+}
+
+/* ================= FIREBASE REAL-TIME SYNC & VS CODE OTA ================= */
+function isFirebaseConfigured(){
+  const cfg=db.firebase;
+  return !!(cfg&&cfg.apiKey&&cfg.databaseURL&&cfg.projectId);
+}
+function getFbStatusText(){
+  if(fbStatusState==='not_configured')return t('firebaseStatusNotConfigured');
+  if(fbStatusState==='initializing')return 'Initializing...';
+  if(fbStatusState==='connected_google')return `${t('firebaseStatusConnectedAs')} ${fbStatusMsg}`;
+  if(fbStatusState==='connected_anon')return t('firebaseStatusConnected');
+  if(fbStatusState==='error')return `${t('firebaseStatusError')}: ${fbStatusMsg}`;
+  if(fbStatusState==='custom')return fbStatusMsg;
+  return t('firebaseStatusNotConfigured');
+}
+function setFbStatus(state,msg=''){
+  fbStatusState=state;
+  fbStatusMsg=msg;
+  const badge=document.getElementById('fbStatusBadge');
+  if(badge){
+    badge.textContent=getFbStatusText();
+    badge.style.color=(state==='error')?'var(--danger)':(state.startsWith('connected')||state==='custom')?'#16a34a':'var(--muted)';
+  }
+}
+function handleFirebaseError(err){
+  const code=(err&&err.code)?String(err.code):'';
+  const msg=(err&&err.message)?String(err.message):String(err||'Unknown error');
+  if(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request'){
+    return 'popup-closed';
+  }
+  if(code==='auth/popup-blocked'){
+    flashToast('Popup blocked — please allow popups');
+  }else if(code==='auth/unauthorized-domain'){
+    flashToast('Add your domain to Firebase Auth settings');
+  }else if(code==='PERMISSION_DENIED'||code==='permission-denied'||/permission_denied/i.test(msg)){
+    flashToast('Check your Firebase Realtime DB rules');
+  }else{
+    flashToast(`${t('firebaseStatusError')}: ${msg}`);
+  }
+  return code||msg;
+}
+function scheduleFirebaseInit(){
+  clearTimeout(fbInitTimer);
+  setFbStatus('initializing');
+  fbInitTimer=setTimeout(()=>initFirebaseIfConfigured(true),300);
+}
+async function initFirebaseIfConfigured(reinit=false){
+  if(!isFirebaseConfigured()){
+    setFbStatus('not_configured');
+    return;
+  }
+  const cfg=db.firebase;
+  setFbStatus('initializing');
+  try{
+    if(reinit&&fbApp){
+      try{await deleteApp(fbApp)}catch(e){console.warn('deleteApp',e)}
+      fbApp=null;fbAuth=null;fbDb=null;fbUid=null;fbListening=false;fbAuthBound=false;
+    }
+    if(!fbApp){
+      const apps=getApps();
+      fbApp=apps.length?apps[0]:initializeApp({
+        apiKey:cfg.apiKey,
+        authDomain:cfg.authDomain||`${cfg.projectId}.firebaseapp.com`,
+        databaseURL:cfg.databaseURL,
+        projectId:cfg.projectId,
+        storageBucket:cfg.storageBucket||undefined,
+        messagingSenderId:cfg.messagingSenderId||undefined,
+        appId:cfg.appId||undefined
+      });
+      fbAuth=getAuth(fbApp);
+      fbDb=getDatabase(fbApp);
+    }
+    if(!fbAuthBound){
+      fbAuthBound=true;
+      onAuthStateChanged(fbAuth,(user)=>{
+        if(user){
+          fbUid=user.uid;
+          db.firebase.connected=true;
+          if(!user.isAnonymous&&user.email){
+            db.firebase.googleUser={
+              displayName:user.displayName||'',
+              email:user.email||'',
+              photoURL:user.photoURL||'',
+              uid:user.uid
+            };
+            setFbStatus('connected_google',user.email);
+          }else{
+            db.firebase.googleUser=null;
+            setFbStatus('connected_anon');
+          }
+          save();
+          updateNavAvatar();
+          if(!fbListening)startFirebaseRoomListener();
+          if(!settingsView.classList.contains('hidden')&&settingsStack[settingsStack.length-1]==='firebase-sync')renderSettingsPage();
+        }else{
+          fbUid=null;
+          signInAnonymously(fbAuth).catch((err)=>{
+            console.warn('Anonymous sign-in failed',err);
+            setFbStatus('error',err.message||'Auth failed');
+          });
+        }
+      });
+    }
+  }catch(e){
+    console.warn('Firebase init error',e);
+    db.firebase.connected=false;
+    setFbStatus('error',e.message||'Invalid config');
+  }
+}
+async function signInWithGoogle(){
+  if(!isFirebaseConfigured()||!fbAuth){
+    flashToast('Configure Firebase first');
+    return;
+  }
+  try{
+    const provider=new GoogleAuthProvider();
+    const res=await signInWithPopup(fbAuth,provider);
+    const user=res.user;
+    db.firebase.googleUser={
+      displayName:user.displayName||'',
+      email:user.email||'',
+      photoURL:user.photoURL||'',
+      uid:user.uid
+    };
+    fbUid=user.uid;
+    db.firebase.connected=true;
+    save();
+    updateNavAvatar();
+    setFbStatus('connected_google',user.email||'Google');
+    if(!fbListening)startFirebaseRoomListener();
+    if(!settingsView.classList.contains('hidden'))renderSettingsPage();
+  }catch(err){
+    const code=handleFirebaseError(err);
+    if(code==='popup-closed'){
+      try{await signInAnonymously(fbAuth)}catch(e2){console.warn(e2)}
+    }else{
+      setFbStatus('error',err.message||'Sign-in failed');
+    }
+  }
+}
+async function signOutGoogle(){
+  if(!fbAuth)return;
+  try{
+    await signOut(fbAuth);
+    db.firebase.googleUser=null;
+    save();
+    updateNavAvatar();
+    await signInAnonymously(fbAuth);
+    setFbStatus('connected_anon');
+    if(!settingsView.classList.contains('hidden'))renderSettingsPage();
+  }catch(err){
+    console.warn('Sign out error',err);
+    handleFirebaseError(err);
+  }
+}
+async function testFirebaseConnection(){
+  if(!fbDb||!fbUid){
+    flashToast('Configure Firebase first');
+    return;
+  }
+  const room=db.firebase.roomCode||'code3412';
+  const pingRef=ref(fbDb,`rooms/${room}/ping`);
+  setFbStatus('initializing');
+  try{
+    const payload={at:Date.now(),by:fbUid};
+    await set(pingRef,payload);
+    const snap=await get(pingRef);
+    if(snap.exists()){
+      setFbStatus('custom',`Ping OK (${new Date(snap.val().at).toLocaleTimeString()})`);
+    }else{
+      setFbStatus('error','Read returned empty');
+    }
+  }catch(err){
+    console.warn('Ping error',err);
+    handleFirebaseError(err);
+    setFbStatus('error',err.message||'Permission denied');
+  }
+}
+function startFirebaseRoomListener(){
+  if(!fbDb||!fbUid||fbListening)return;
+  fbListening=true;
+  const room=db.firebase.roomCode||'code3412';
+  const q=query(ref(fbDb,`rooms/${room}/messages`),limitToLast(40));
+  let squadChat=db.chats.find(c=>c.official)||db.chats.find(c=>!c.saved);
+  onChildAdded(q,(snap)=>{
+    const m=snap.val();
+    if(!m||!squadChat)return;
+    if(squadChat.messages.some(x=>x.fbKey===snap.key))return;
+    const isMe=m.uid===fbUid;
+    const newMsg={
+      id:uid(),fbKey:snap.key,type:m.type==='voice'?'audio':(m.type||'text'),
+      media:m.audioData||m.media||'',
+      text:isMe?(m.text||''):`${m.name||'Friend'}: ${m.text||''}`,
+      sender:isMe?'me':'them',time:m.timestamp||Date.now(),status:'read'
+    };
+    squadChat.messages.push(newMsg);
+    squadChat.updatedAt=newMsg.time;
+    if(db.activeId!==squadChat.id)squadChat.unread=(squadChat.unread||0)+1;
+    save();
+    if(db.activeId===squadChat.id)renderMessages();
+    renderChatList();
+    if(!isMe&&m.timestamp>appStartTime&&db.tgSettings.notiEnabled){
+      if("Notification" in window&&Notification.permission==="granted"){
+        new Notification(m.name||'Telechat',{body:m.text||'New message'});
+      }else{
+        flashToast(`💬 ${m.name||'Friend'}: ${m.text||''}`);
+      }
+    }
+  },(err)=>{
+    console.warn('RTDB listen error',err);
+    handleFirebaseError(err);
+    setFbStatus('error',err.message||'Read error');
+  });
+
+  // Listen for VS Code Live OTA reload signal in Firebase
+  onValue(ref(fbDb,`rooms/${room}/ota_version`),(snap)=>{
+    const ver=snap.val();
+    if(!ver||!ver.timestamp)return;
+    const lastOtaVer=Number(localStorage.getItem('telechat_last_ota_ver')||0);
+    if(!lastOtaVer){
+      localStorage.setItem('telechat_last_ota_ver',String(ver.timestamp));
+      return;
+    }
+    if(ver.timestamp>lastOtaVer){
+      localStorage.setItem('telechat_last_ota_ver',String(ver.timestamp));
+      flashToast('⚡ VS Code OTA Update detected — Reloading...');
+      setTimeout(()=>window.location.reload(),900);
+    }
+  },(err)=>{
+    console.warn('OTA listen error',err);
+  });
+}
+
+/* ================= REPLY ENGINE ================= */
+const REPLY={
+  my:{greet:['မင်္ဂလာပါ 👋','ဟယ်လို! ဘယ်လိုလဲ?','ဟိုင်း 😊'],how:['နေကောင်းပါတယ် 🙏 ခင်ဗျာရော?','ကောင်းပါတယ် 😊'],thanks:['ရပါတယ်ဗျ 🙏','ဘာမှမဖြစ်ပါဘူး 😊'],bye:['ဘိုင် 👋','ကောင်းသော အနားယူချိန်ပါ 🌙'],sorry:['ရပါတယ်ဗျ 🙏','စိတ်မပူပါနဲ့ 😊'],q:['ဟုတ်ကဲ့ 🤔','ကောင်းတဲ့မေးခွန်းပါ။'],ok:['👍','ဟုတ်ကဲ့ 👌','အိုကေ။'],laugh:['ဟားဟား 😄','😂'],love:['😊🙏','ကျေးဇူးတင်ပါတယ် ❤️'],long:['ဖတ်လိုက်ပါပြီ။','နားလည်ပါတယ်။'],short:['ဟုတ်?','😊'],general:['ဟုတ်ကဲ့ 👌','အိုကေ။','မှတ်ထားလိုက်ပါတယ် 📝']},
+  en:{greet:['Hello 👋','Hi! How are you?'],how:['I\'m doing well, thanks 🙏'],thanks:['You\'re welcome 🙏'],bye:['Bye 👋'],sorry:['It\'s okay 🙏'],q:['Good question 🤔'],ok:['👍','Sure 👌'],laugh:['Haha 😄'],love:['Thank you ❤️'],long:['Got it!'],short:['Yes?'],general:['Okay 👌','Noted 📝']},
+  ko:{greet:['안녕하세요 👋'],how:['잘 지내요 🙏'],thanks:['천만에요 🙏'],bye:['안녕 👋'],sorry:['괜찮아요 🙏'],q:['좋은 질문이에요 🤔'],ok:['👍','알겠어요 👌'],laugh:['하하 😄'],love:['감사합니다 ❤️'],long:['읽었어요.'],short:['네?'],general:['네 👌','메모했어요 📝']},
+  ja:{greet:['こんにちは 👋'],how:['元気です 🙏'],thanks:['どういたしまして 🙏'],bye:['じゃあね 👋'],sorry:['大丈夫ですよ 🙏'],q:['いい質問ですね 🤔'],ok:['👍','了解です 👌'],laugh:['はは 😄'],love:['ありがとう ❤️'],long:['読みました。'],short:['ん？'],general:['はい 👌','メモしました 📝']},
+  ru:{greet:['Привет 👋'],how:['Хорошо, спасибо 🙏'],thanks:['Пожалуйста 🙏'],bye:['Пока 👋'],sorry:['Всё хорошо 🙏'],q:['Хороший вопрос 🤔'],ok:['👍','Хорошо 👌'],laugh:['Хаха 😄'],love:['Спасибо ❤️'],long:['Понял.'],short:['Да?'],general:['Окей 👌','Записал 📝']}
+};
+function detectLang(text){
+  if(/[\u1000-\u109F]/.test(text))return 'my';
+  if(/[\uAC00-\uD7AF\u1100-\u11FF]/.test(text))return 'ko';
+  if(/[\u3040-\u30FF]/.test(text))return 'ja';
+  if(/[\u0400-\u04FF]/.test(text))return 'ru';
+  if(/[A-Za-z]/.test(text))return 'en';
+  return currentLang;
+}
+function generateReply(text){
+  const raw=String(text||'').trim();const t2=raw.toLowerCase();
+  const lang=(messageLang==='auto')?detectLang(raw):messageLang;
+  const R=REPLY[lang]||REPLY.en;
+  const has=(...r)=>r.some(x=>x.test(t2));
+  if(has(/မင်္ဂလာပါ/,/ဟယ်လို/,/\bhello\b/,/\bhi\b/,/안녕/,/こんにちは/,/привет/i))return pick(R.greet);
+  if(has(/နေကောင်းလား/,/how are you/i))return pick(R.how);
+  if(has(/ကျေးဇူး/,/thanks/i))return pick(R.thanks);
+  if(has(/ဘိုင်/,/\bbye\b/i))return pick(R.bye);
+  if(has(/လား/,/လဲ/,/\?/i))return pick(R.q);
+  if(has(/အိုကေ/,/ဟုတ်ကဲ့/,/\bok\b/i))return pick(R.ok);
+  return pick(R.general);
+}
+
+/* ================= WALLPAPER ================= */
+const WALLPAPER_PRESETS=[
+  {key:'default',label:'Default',wp:{mode:'default'}},
+  {key:'sky',label:'Sky',wp:{mode:'color',value:'#dbeafe'}},
+  {key:'mint',label:'Mint',wp:{mode:'color',value:'#d1fae5'}},
+  {key:'peach',label:'Peach',wp:{mode:'color',value:'#ffe9d6'}},
+  {key:'lav',label:'Lavender',wp:{mode:'color',value:'#ede9fe'}},
+  {key:'rose',label:'Rose',wp:{mode:'color',value:'#ffe4e6'}},
+  {key:'night',label:'Night',wp:{mode:'color',value:'#0e1621'}},
+  {key:'sunset',label:'Sunset',wp:{mode:'gradient',value:'linear-gradient(135deg,#ff9a9e 0%,#fad0c4 100%)'}},
+  {key:'ocean',label:'Ocean',wp:{mode:'gradient',value:'linear-gradient(135deg,#a1c4fd 0%,#c2e9fb 100%)'}},
+  {key:'forest',label:'Forest',wp:{mode:'gradient',value:'linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%)'}},
+  {key:'aurora',label:'Aurora',wp:{mode:'gradient',value:'linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%)'}},
+  {key:'dusk',label:'Dusk',wp:{mode:'gradient',value:'linear-gradient(135deg,#5b247a 0%,#1bcedf 100%)'}},
+  {key:'dots',label:'Dots',wp:{mode:'pattern',pattern:'dots'}},
+  {key:'stripes',label:'Stripes',wp:{mode:'pattern',pattern:'stripes'}},
+  {key:'grid',label:'Grid',wp:{mode:'pattern',pattern:'grid'}}
+];
+function applyWallpaperTo(el,wp){
+  el.style.backgroundImage='';el.style.backgroundSize='';el.style.backgroundPosition='';el.style.backgroundColor='';
+  if(!wp||wp.mode==='default'){el.style.backgroundColor='var(--chat-bg)';return}
+  if(wp.mode==='color'){el.style.backgroundColor=wp.value;return}
+  if(wp.mode==='gradient'){el.style.backgroundImage=wp.value;return}
+  if(wp.mode==='pattern'){
+    el.style.backgroundColor='var(--chat-bg)';
+    if(wp.pattern==='dots'){el.style.backgroundImage='radial-gradient(circle, rgba(0,0,0,.09) 1.2px, transparent 1.2px)';el.style.backgroundSize='22px 22px'}
+    else if(wp.pattern==='stripes'){el.style.backgroundImage='repeating-linear-gradient(45deg, rgba(0,0,0,.05) 0 12px, transparent 12px 24px)'}
+    else if(wp.pattern==='grid'){el.style.backgroundImage='linear-gradient(rgba(0,0,0,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.055) 1px, transparent 1px)';el.style.backgroundSize='28px 28px'}
+    return;
+  }
+  if(wp.mode==='image'){el.style.backgroundColor='#0e1621';el.style.backgroundImage=`url("${wp.value}")`;el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+}
+function wallpaperFor(chat){return (chat&&chat.wallpaper)?chat.wallpaper:(db.wallpaper||{mode:'default'})}
+
+/* ================= IMAGE COMPRESSION ================= */
+function compressImage(file,maxSide=1280,quality=0.78){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onerror=()=>reject(new Error('read error'));
+    r.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('image error'));
+      img.onload=()=>{
+        let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+        const s=Math.min(1,maxSide/Math.max(w,h));
+        w=Math.max(1,Math.round(w*s));h=Math.max(1,Math.round(h*s));
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };
+      img.src=r.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('read error'));r.readAsDataURL(file);
+  });
+}
+
+/* ================= ELEMENTS ================= */
+const chatListEl=document.getElementById('chatList');
+const messagesEl=document.getElementById('messages');
+const emptyState=document.getElementById('emptyState');
+const emptyStateText=document.getElementById('emptyStateText');
+const chatView=document.getElementById('chatView');
+const chatAvatar=document.getElementById('chatAvatar');
+const chatName=document.getElementById('chatName');
+const chatStatus=document.getElementById('chatStatus');
+const msgInput=document.getElementById('msgInput');
+const sendBtn=document.getElementById('sendBtn');
+const searchInput=document.getElementById('searchInput');
+const appEl=document.getElementById('app');
+const pinnedBar=document.getElementById('pinnedBar');
+const pinnedText=document.getElementById('pinnedText');
+const replyBar=document.getElementById('replyBar');
+const replyName=document.getElementById('replyName');
+const replyText=document.getElementById('replyText');
+const editBar=document.getElementById('editBar');
+const editPreview=document.getElementById('editPreview');
+const editLabel=document.getElementById('editLabel');
+const ctxMenu=document.getElementById('ctxMenu');
+const folderChips=document.getElementById('folderChips');
+const lightbox=document.getElementById('lightbox');
+const lightboxImg=document.getElementById('lightboxImg');
+const chatMenuBtn=document.getElementById('chatMenuBtn');
+const chatDropdown=document.getElementById('chatDropdown');
+const settingsView=document.getElementById('settingsView');
+const settingsTitle=document.getElementById('settingsTitle');
+const settingsPage=document.getElementById('settingsPage');
+const settingsGroup=document.getElementById('settingsGroup');
+const settingsProfileCard=document.getElementById('settingsProfileCard');
+const profileSidebarPanel=document.getElementById('profileSidebarPanel');
+const profileSidebarContent=document.getElementById('profileSidebarContent');
+const attachBtn=document.getElementById('attachBtn');
+const attachMenu=document.getElementById('attachMenu');
+
+function getActiveChat(){return db.chats.find(c=>c.id===db.activeId)||null}
+function lastMsg(chat){return chat.messages.length?chat.messages[chat.messages.length-1]:null}
+function previewText(m){
+  if(!m)return '';
+  if(m.type==='photo')return m.text?'📷 '+m.text:'📷 Photo';
+  if(m.type==='video')return m.text?'🎬 '+m.text:'🎬 Video';
+  if(m.type==='audio')return '🎵 '+(m.text||'Audio');
+  if(m.type==='file')return '📎 '+(m.fileName||m.text||'File');
+  return m.text;
+}
+
+/* ================= ORIGINAL SVG ICONS (UNMODIFIED FOR SETTINGS) ================= */
+const SVG_IC={
+  palette:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.5a4.5 4.5 0 0 0 4.5-4.5C22 6 17.5 2 12 2z"/></svg>`,
+  database:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+  folder:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  globe:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+  message:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/></svg>`,
+  arrow:`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 8"/></svg>`,
+  sun:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
+  moon:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>`,
+  image:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.5-4.5L6 21"/></svg>`,
+  bookmark:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  close:`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  camera:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+  edit:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,
+  video:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+  music:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  fileIcon:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+  download:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  upload:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>`
+};
+
+/* ================= RENDER SIDEBAR ================= */
+function renderFolderChips(){
+  folderChips.innerHTML=db.folders.map(f=>`<button class="folder-chip${f.id===db.activeFolder?' active':''}" data-fid="${esc(f.id)}">${esc(f.name)}</button>`).join('')+`<button class="folder-chip add" id="addFolderChip">+</button>`;
+}
+function renderChatList(){
+  const q=searchInput.value.trim().toLowerCase();
+  const activeFolder=db.folders.find(f=>f.id===db.activeFolder)||db.folders[0];
+  const list=db.chats.filter(c=>{
+    if(q&&!c.name.toLowerCase().includes(q))return false;
+    if(activeFolder&&activeFolder.id!=='all'){if(!c.name.toLowerCase().includes(activeFolder.name.toLowerCase()))return false}
+    return true;
+  }).sort((a,b)=>{
+    if(a.saved)return -1;if(b.saved)return 1;
+    return (b.updatedAt||0)-(a.updatedAt||0);
+  });
+  if(list.length===0){chatListEl.innerHTML=`<div class="empty-list">${q?'No chats match your search':t('chooseChat')}</div>`;return}
+  chatListEl.innerHTML=list.map(chat=>{
+    const m=lastMsg(chat);
+    let preview;
+    if(m){const prefix=chat.saved?'':(m.sender==='me'?(currentLang==='my'?'သင်: ':currentLang==='ko'?'나: ':currentLang==='ja'?'あなた: ':currentLang==='ru'?'Вы: ':'You: '):'');preview=prefix+previewText(m).replace(/\n/g,' ')}
+    else preview='—';
+    const time=m?fmtListTime(m.time):'';
+    const active=chat.id===db.activeId?' active':'';
+    const avatarHtml=chat.saved?`<div class="avatar saved">${SVG_IC.bookmark}</div>`:`<div class="avatar" style="background:${avatarColor(chat.name)}">${esc(initials(chat.name))}</div>`;
+    const verifiedHtml=chat.official?`<span class="verified"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 8"/></svg></span>`:'';
+    return `<div class="chat-item${active}" data-id="${chat.id}">${avatarHtml}<div class="chat-body"><div class="chat-row"><div class="chat-name">${esc(chat.name)}${verifiedHtml}</div><div class="chat-time">${time}</div></div><div class="chat-row"><div class="chat-preview">${esc(preview.slice(0,60))}</div>${chat.unread>0?`<div class="badge">${chat.unread}</div>`:''}</div></div>${chat.saved?'':`<button class="del-btn" data-del="${chat.id}" title="Delete">${SVG_IC.close}</button>`}</div>`;
+  }).join('');
+}
+
+function updateNavAvatar(){
+  const dot=document.getElementById('navAvatarDot');
+  if(!dot)return;
+  const gPhoto=db.firebase&&db.firebase.googleUser&&db.firebase.googleUser.photoURL;
+  const photo=gPhoto||db.profile.avatar;
+  if(photo){
+    dot.style.backgroundImage=`url("${photo}")`;
+    dot.textContent='';
+  }else{
+    dot.style.backgroundImage='';
+    const gName=db.firebase&&db.firebase.googleUser&&db.firebase.googleUser.displayName;
+    dot.textContent=esc((gName||db.profile.name||'W').slice(0,1).toUpperCase());
+  }
+}
+
+function renderSettingsProfileCard(){
+  const p=db.profile;
+  const avatarStyle=p.avatar?`background-image:url("${p.avatar}")`:'';
+  settingsProfileCard.innerHTML=`
+    <div class="settings-avatar-wrap">
+      <div class="settings-avatar" style="${avatarStyle}">${p.avatar?'':esc((p.name||'W').slice(0,1).toUpperCase())}</div>
+      <div class="sp-info">
+        <div class="sp-name">${esc(p.name||t('you'))}</div>
+        <div class="sp-username">${p.username?'@'+esc(p.username):''}</div>
+        ${p.bio?`<div class="sp-bio">${esc(p.bio)}</div>`:''}
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="p-act" data-pact="setphoto">${SVG_IC.camera}<span>${esc(t('setPhoto'))}</span></button>
+      <button class="p-act" data-pact="edit">${SVG_IC.edit}<span>${esc(t('editInfo'))}</span></button>
+      <button class="p-act" data-pact="settings">${SVG_IC.gear}<span>${esc(t('settings'))}</span></button>
+    </div>`;
+  updateNavAvatar();
+}
+
+/* Settings items preserve the exact original SVG_IC icons while adding Account + Telegram settings */
+function renderSettingsList(){
+  const items=[
+    {key:'profile',icon:SVG_IC.user,label:t('account')},
+    {key:'wallpaper',icon:SVG_IC.image,label:t('wallpaper')},
+    {key:'chat-settings',icon:SVG_IC.palette,label:t('chatSettings')},
+    {key:'notifications',icon:SVG_IC.music,label:t('notifications')},
+    {key:'privacy',icon:SVG_IC.user,label:t('privacy')},
+    {key:'data-storage',icon:SVG_IC.database,label:t('dataStorage')},
+    {key:'chat-folders',icon:SVG_IC.folder,label:t('chatFolders')},
+    {key:'devices',icon:SVG_IC.gear,label:t('devices')},
+    {key:'power-saving',icon:SVG_IC.sun,label:t('powerSaving')},
+    {key:'firebase-sync',icon:SVG_IC.database,label:t('firebaseSync')},
+    {key:'language',icon:SVG_IC.globe,label:t('language')},
+    {key:'message-language',icon:SVG_IC.message,label:t('messageLanguage')},
+    {key:'faq',icon:SVG_IC.message,label:t('faq')}
+  ];
+  settingsGroup.innerHTML=items.map(it=>`<button class="set-item" data-open="${it.key}"><span class="si-ico">${it.icon}</span><span>${esc(it.label)}</span><span class="si-arrow">${SVG_IC.arrow}</span></button>`).join('');
+}
+
+/* ================= RENDER CHAT ================= */
+function renderMessages(){
+  const chat=getActiveChat();if(!chat)return;
+  let html='';let lastDate='';
+  chat.messages.forEach(m=>{
+    const dSep=fmtDateSep(m.time);
+    if(dSep!==lastDate){html+=`<div class="date-sep">${dSep}</div>`;lastDate=dSep}
+    const isOut=m.sender==='me';
+    let tick=isOut?((m.status==='read'||m.status==='delivered')?'<span class="tick">✓✓</span>':'<span class="tick">✓</span>'):'';
+    let quoteHtml='';
+    if(m.replyTo){
+      const quoted=chat.messages.find(x=>x.id===m.replyTo);
+      const qName=quoted?(quoted.sender==='me'?(currentLang==='my'?'သင်':'You'):esc(chat.name)):'';
+      const qText=quoted?esc(previewText(quoted).replace(/\n/g,' ').slice(0,90)):'—';
+      quoteHtml=`<div class="quoted" data-goto="${quoted?quoted.id:''}"><div class="q-name">${qName}</div><div class="q-text">${qText}</div></div>`;
+    }
+    const editedMark=m.edited?'<span class="edited">edited</span>':'';
+    if(m.type==='photo'){
+      html+=`<div class="msg ${isOut?'out':'in'}" data-mid="${m.id}"><div class="bubble media">${quoteHtml}<img class="msg-img" src="${m.media}" alt="" data-lightbox="${m.id}" />${m.text?`<div class="caption">${esc(m.text)}</div>`:''}<div class="meta">${editedMark}<span>${fmtTime(m.time)}</span>${tick}</div></div></div>`;
+    }else if(m.type==='video'){
+      html+=`<div class="msg ${isOut?'out':'in'}" data-mid="${m.id}"><div class="bubble media">${quoteHtml}<video class="msg-video" src="${m.media}" controls preload="metadata"></video>${m.text?`<div class="caption">${esc(m.text)}</div>`:''}<div class="meta">${editedMark}<span>${fmtTime(m.time)}</span>${tick}</div></div></div>`;
+    }else if(m.type==='audio'){
+      html+=`<div class="msg ${isOut?'out':'in'}" data-mid="${m.id}"><div class="bubble audio">${quoteHtml}<audio class="msg-audio" src="${m.media}" controls preload="metadata"></audio>${m.text?`<div class="caption" style="font-size:13.5px;margin-bottom:2px">${esc(m.text)}</div>`:''}<div class="meta">${editedMark}<span>${fmtTime(m.time)}</span>${tick}</div></div></div>`;
+    }else if(m.type==='file'){
+      const sizeStr=m.fileSize?fmtBytes(m.fileSize):'';
+      html+=`<div class="msg ${isOut?'out':'in'}" data-mid="${m.id}"><div class="bubble file">${quoteHtml}<div class="file-card"><div class="file-icon">${SVG_IC.fileIcon}</div><div class="file-info"><div class="file-name">${esc(m.fileName||'File')}</div><div class="file-size">${esc(sizeStr)}</div></div><a class="file-dl" href="${m.media}" download="${esc(m.fileName||'file')}" title="Download">${SVG_IC.download}</a></div>${m.text?`<div class="caption" style="font-size:13.5px;padding:0 4px 4px">${esc(m.text)}</div>`:''}<div class="meta">${editedMark}<span>${fmtTime(m.time)}</span>${tick}</div></div></div>`;
+    }else{
+      html+=`<div class="msg ${isOut?'out':'in'}" data-mid="${m.id}"><div class="bubble">${quoteHtml}${esc(m.text)}<div class="meta">${editedMark}<span>${fmtTime(m.time)}</span>${tick}</div></div></div>`;
+    }
+  });
+  messagesEl.innerHTML=html;
+  scrollToBottom();renderPinned(chat);applyWallpaperTo(messagesEl,wallpaperFor(chat));
+}
+function scrollToBottom(){requestAnimationFrame(()=>{messagesEl.scrollTop=messagesEl.scrollHeight})}
+function renderPinned(chat){
+  if(chat.pinnedId){
+    const m=chat.messages.find(x=>x.id===chat.pinnedId);
+    if(m){pinnedBar.classList.remove('hidden');pinnedText.textContent=previewText(m).replace(/\n/g,' ').slice(0,100);return}
+    chat.pinnedId=null;save();
+  }
+  pinnedBar.classList.add('hidden');
+}
+
+/* ================= OPEN/CLOSE ================= */
+function openChat(id){
+  const chat=db.chats.find(c=>c.id===id);if(!chat)return;
+  settingsStack=[];settingsView.classList.add('hidden');
+  db.activeId=id;chat.unread=0;cancelReply();cancelEdit();save();
+  emptyState.classList.add('hidden');chatView.classList.remove('hidden');appEl.classList.add('show-chat');
+  if(chat.saved){chatAvatar.className='avatar sm saved';chatAvatar.innerHTML=SVG_IC.bookmark;chatAvatar.style.background=''}
+  else{chatAvatar.className='avatar sm';chatAvatar.style.background=avatarColor(chat.name);chatAvatar.textContent=initials(chat.name)}
+  chatName.textContent=chat.name;
+  chatStatus.textContent=chat.saved?'':t('lastSeen');chatStatus.classList.remove('typing');
+  renderChatList();renderMessages();
+  if(window.innerWidth>820)msgInput.focus();
+}
+function closeChatView(){
+  db.activeId=null;cancelReply();cancelEdit();save();
+  chatView.classList.add('hidden');emptyState.classList.remove('hidden');appEl.classList.remove('show-chat');renderChatList();
+}
+
+/* ================= SETTINGS & PROFILE PAGES (18186.jpg Logic in Telechat UI) ================= */
+function openSettingsPage(key){
+  settingsStack=[key];renderSettingsPage();
+  emptyState.classList.add('hidden');chatView.classList.add('hidden');settingsView.classList.remove('hidden');appEl.classList.add('show-chat');
+}
+function closeSettingsPage(){
+  settingsStack=[];settingsView.classList.add('hidden');
+  if(db.activeId&&getActiveChat()){chatView.classList.remove('hidden');appEl.classList.add('show-chat')}
+  else{emptyState.classList.remove('hidden');appEl.classList.remove('show-chat')}
+}
+
+function buildProfileMarkup(){
+  const p=db.profile;
+  const avatarStyle=p.avatar?`background-image:url("${p.avatar}")`:'';
+  const allPosts=Array.isArray(p.posts)?p.posts:[];
+  const visiblePosts=allPosts.filter(x=>profileSubTab==='archived'?x.archived:!x.archived);
+
+  const postsHtml=visiblePosts.length?visiblePosts.map(post=>`
+    <div class="sp-row">
+      <div class="sp-body">
+        <div class="sp-title">${esc(post.text)}</div>
+        <div class="sp-sub">${fmtListTime(post.time)}</div>
+      </div>
+      <button class="sp-action" data-post-toggle="${esc(post.id)}">${post.archived?'Unarchive':'Archive'}</button>
+    </div>
+  `).join(''):`<div style="padding:18px;text-align:center;color:var(--muted);font-size:13px">${profileSubTab==='posts'?'No active posts yet.':'No archived posts.'}</div>`;
+
+  return `<div class="profile-view">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px">
+      <button class="icon-btn" data-pact="qr" title="QR Code">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20h2"/></svg>
+      </button>
+      <button class="icon-btn" data-pact="copyuser" title="Copy Username">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div class="profile-avatar-big" style="${avatarStyle}">${p.avatar?'':esc((p.name||'W').slice(0,1).toUpperCase())}</div>
+    <div class="profile-view-info">
+      <div class="profile-view-name">${esc(p.name||t('you'))}</div>
+      <div class="profile-view-status"><span class="sp-status-dot"></span>${isOnlineNow()?esc(t('online')):esc(t('waitingNet'))}</div>
+      <div class="music-pill" data-pact="music">🎵 ${esc(p.music||'Add music status')} &rsaquo;</div>
+    </div>
+
+    <div class="profile-view-actions">
+      <button class="p-act" data-pact="setphoto">${SVG_IC.camera}<span>${esc(t('setPhoto'))}</span></button>
+      <button class="p-act" data-pact="edit">${SVG_IC.edit}<span>${esc(t('editInfo'))}</span></button>
+      <button class="p-act" data-pact="settings">${SVG_IC.gear}<span>${esc(t('settings'))}</span></button>
+    </div>
+
+    <!-- Channel Showcase Card (Logic from 18186.jpg) -->
+    <div class="sp-section">
+      <div class="sp-card">
+        <div class="channel-head">
+          <span>Channel <span class="sub-pill">${esc(p.channelSubs||4)} subscribers</span></span>
+          <span style="color:var(--muted);font-weight:400">✓✓ Thu</span>
+        </div>
+        <div class="sp-row" data-pact="edit" style="cursor:pointer;padding-top:8px">
+          <div class="avatar sm" style="background:${avatarColor(p.channelName||'Channel')}">${esc(initials(p.channelName||'WC'))}</div>
+          <div class="sp-body">
+            <div class="sp-title" style="font-weight:600">${esc(p.channelName||'White Cloud music')}</div>
+            <div class="sp-sub">${esc(p.channelLink||'@LyBot https://t.me/LyDBot')}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile, Bio, Username, Birthday + Age Card -->
+    <div class="sp-section">
+      <div class="sp-card">
+        <div class="sp-row" data-copy="${esc(p.mobile||'')}" style="cursor:pointer">
+          <div class="sp-body"><div class="sp-title">${esc(p.mobile||'+95 9681141470')}</div><div class="sp-sub">${esc(t('mobile'))}</div></div>
+        </div>
+        <div class="sp-row" data-copy="${esc(p.bio||'')}" style="cursor:pointer">
+          <div class="sp-body"><div class="sp-title">${esc(p.bio||'No bio set')}</div><div class="sp-sub">${esc(t('bio'))}</div></div>
+        </div>
+        <div class="sp-row" data-copy="@${esc(p.username||'')}" style="cursor:pointer">
+          <div class="sp-body"><div class="sp-title">${p.username?'@'+esc(p.username):'@telechat'}</div><div class="sp-sub">${esc(t('username'))}</div></div>
+        </div>
+        <div class="sp-row" data-pact="edit" style="cursor:pointer">
+          <div class="sp-body"><div class="sp-title">${esc(formatBirthdayWithAge(p.birthday)||'Not set')}</div><div class="sp-sub">${esc(t('birthday'))}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Posts & Archived Posts Logic -->
+    <div class="profile-tabs">
+      <div class="profile-tab-group">
+        <button class="profile-tab-btn${profileSubTab==='posts'?' active':''}" data-ptab="posts">Posts</button>
+        <button class="profile-tab-btn${profileSubTab==='archived'?' active':''}" data-ptab="archived">Archived Posts</button>
+      </div>
+      <button class="sp-action" data-pact="newpost">+ Post</button>
+    </div>
+    <div class="sp-card" style="margin-top:10px">${postsHtml}</div>
+  </div>`;
+}
+
+function renderSettingsPage(){
+  const key=settingsStack[settingsStack.length-1];
+  const titles={
+    'profile':t('account'),'edit-profile':t('editProfile'),'wallpaper':t('wallpaper'),
+    'chat-settings':t('chatSettings'),'data-storage':t('dataStorage'),'chat-folders':t('chatFolders'),
+    'language':t('language'),'message-language':t('messageLanguage'),
+    'notifications':t('notifications'),'privacy':t('privacy'),'devices':t('devices'),
+    'power-saving':t('powerSaving'),'firebase-sync':t('firebaseSync'),'faq':t('faq')
+  };
+  settingsTitle.textContent=titles[key]||'';
+  if(key==='profile')settingsPage.innerHTML=buildProfileMarkup();
+  else if(key==='edit-profile')settingsPage.innerHTML=renderEditProfilePage();
+  else if(key==='wallpaper')settingsPage.innerHTML=renderWallpaperPage();
+  else if(key==='chat-settings')settingsPage.innerHTML=renderChatSettingsPage();
+  else if(key==='data-storage'){settingsPage.innerHTML=renderDataStoragePage();updateStorageSize()}
+  else if(key==='chat-folders')settingsPage.innerHTML=renderChatFoldersPage();
+  else if(key==='language')settingsPage.innerHTML=renderLanguagePage('app');
+  else if(key==='message-language')settingsPage.innerHTML=renderLanguagePage('msg');
+  else if(key==='notifications')settingsPage.innerHTML=renderNotificationsPage();
+  else if(key==='privacy')settingsPage.innerHTML=renderPrivacyPage();
+  else if(key==='devices')settingsPage.innerHTML=renderDevicesPage();
+  else if(key==='power-saving')settingsPage.innerHTML=renderPowerSavingPage();
+  else if(key==='firebase-sync')settingsPage.innerHTML=renderFirebaseSyncPage();
+  else if(key==='faq')settingsPage.innerHTML=renderFaqPage();
+}
+
+function renderEditProfilePage(){
+  const p=db.profile;
+  return `<div class="edit-form">
+    <div class="upload-row">
+      <label class="upload-btn">${SVG_IC.camera}<span>${esc(t('profilePhoto'))}</span><input type="file" id="editAvatarFile" accept="image/*" /></label>
+      ${p.avatar?`<button class="btn ghost" id="removeAvatar">${esc(t('delete'))}</button>`:''}
+    </div>
+    <label>${esc(t('you'))}<input type="text" id="editName" value="${esc(p.name||'')}" maxlength="60" /></label>
+    <label>${esc(t('username'))}<input type="text" id="editUsername" value="${esc(p.username||'')}" maxlength="30" placeholder="username" /></label>
+    <label>${esc(t('mobile'))}<input type="text" id="editMobile" value="${esc(p.mobile||'')}" maxlength="25" placeholder="+95 9..." /></label>
+    <label>${esc(t('birthday'))}<input type="date" id="editBirthday" value="${esc(p.birthday||'')}" /></label>
+    <label>${esc(t('music'))}<input type="text" id="editMusic" value="${esc(p.music||'')}" placeholder="Lil Kee Boi – Stay Forever" /></label>
+    <label>${esc(t('channel'))}<input type="text" id="editChannel" value="${esc(p.channelName||'')}" placeholder="White Cloud music" /></label>
+    <label>Channel Link / Handle<input type="text" id="editChannelLink" value="${esc(p.channelLink||'')}" placeholder="@LyBot https://t.me/LyDBot" /></label>
+    <label>${esc(t('bio'))}<textarea id="editBio" rows="3" maxlength="200" placeholder="${esc(t('bio'))}">${esc(p.bio||'')}</textarea></label>
+    <button class="save-btn" id="saveProfile">${esc(t('save'))}</button>
+  </div>`;
+}
+
+function renderNotificationsPage(){
+  const s=db.tgSettings;
+  return `<div class="sp-section"><div class="sp-card">
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Private Chats &amp; Groups</div><div class="sp-sub">Real-time alerts when messages arrive</div></div><label class="switch"><input type="checkbox" data-tg="notiEnabled" ${s.notiEnabled?'checked':''}><span class="slider"></span></label></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">In-App Sounds</div><div class="sp-sub">Play subtle tone on new messages</div></div><label class="switch"><input type="checkbox" data-tg="notiSound" ${s.notiSound?'checked':''}><span class="slider"></span></label></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">In-App Vibrate</div><div class="sp-sub">Haptic feedback on incoming messages</div></div><label class="switch"><input type="checkbox" data-tg="notiVibrate" ${s.notiVibrate?'checked':''}><span class="slider"></span></label></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Message Preview</div><div class="sp-sub">Show message content inside notifications</div></div><label class="switch"><input type="checkbox" data-tg="inAppPreview" ${s.inAppPreview?'checked':''}><span class="slider"></span></label></div>
+  </div></div>`;
+}
+
+function renderPrivacyPage(){
+  const s=db.tgSettings;
+  return `<div class="sp-section"><div class="sp-card">
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Last Seen &amp; Online</div><div class="sp-sub">${esc(s.privacyLastSeen)}</div></div><button class="sp-action" id="cycleLastSeen">Change</button></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Profile Photos</div><div class="sp-sub">${esc(s.privacyPhoto)}</div></div><button class="sp-action" id="cyclePrivacyPhoto">Change</button></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Passcode Lock</div><div class="sp-sub">Require PIN to unlock Telechat</div></div><label class="switch"><input type="checkbox" data-tg="passcodeEnabled" ${s.passcodeEnabled?'checked':''}><span class="slider"></span></label></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Two-Step Verification</div><div class="sp-sub">Additional cloud password protection</div></div><label class="switch"><input type="checkbox" data-tg="twoStepEnabled" ${s.twoStepEnabled?'checked':''}><span class="slider"></span></label></div>
+  </div></div>`;
+}
+
+function renderDevicesPage(){
+  return `<div class="sp-section"><div class="sp-section-title">Current Session</div><div class="sp-card">
+    <div class="sp-row"><div class="sp-ico">${SVG_IC.gear}</div><div class="sp-body"><div class="sp-title">Telechat Desktop / Mobile APK</div><div class="sp-sub">${esc(navigator.userAgent.slice(0,68))}</div></div><span class="sp-action">Online</span></div>
+  </div></div>`;
+}
+
+function renderPowerSavingPage(){
+  const s=db.tgSettings;
+  return `<div class="sp-section"><div class="sp-card">
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">Low-RAM / Power Saving Mode</div><div class="sp-sub">Keeps max 40 messages in RAM &amp; disables heavy transitions for smaller phones</div></div><label class="switch"><input type="checkbox" data-tg="powerSaving" ${s.powerSaving?'checked':''}><span class="slider"></span></label></div>
+  </div></div>`;
+}
+
+function renderFirebaseSyncPage(){
+  const f=db.firebase;
+  const configured=isFirebaseConfigured();
+  const gu=f.googleUser;
+  const googleSvg=`<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>`;
+  const authBlock=gu?`
+    <div class="sp-card" style="margin-top:6px">
+      <div class="sp-row">
+        <div class="avatar sm" style="background-image:url('${esc(gu.photoURL||'')}');background:${gu.photoURL?'':'var(--accent)'}">${gu.photoURL?'':esc((gu.displayName||'G').slice(0,1).toUpperCase())}</div>
+        <div class="sp-body">
+          <div class="sp-title">${esc(gu.displayName||'Google User')}</div>
+          <div class="sp-sub">${esc(gu.email||'')}</div>
+        </div>
+        <button class="sp-action danger" id="googleSignOutBtn">${esc(t('firebaseSignOut'))}</button>
+      </div>
+    </div>
+  `:`
+    <button type="button" id="googleSignInBtn" ${configured?'':'disabled title="Configure Firebase first"'} style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:44px;border-radius:10px;border:1px solid #dadce0;background:#fff;color:#3c4043;font-size:14px;font-weight:600;cursor:${configured?'pointer':'not-allowed'};opacity:${configured?'1':'.55'};">
+      ${googleSvg}
+      <span>${esc(t('firebaseSignInGoogle'))}</span>
+    </button>
+  `;
+  return `<div class="edit-form">
+    <div class="sp-desc"><strong>${esc(t('firebaseConfigTitle'))}</strong></div>
+    <div id="fbStatusBadge" style="text-align:center;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:10px;background:var(--hover);border:1px solid var(--border);color:${fbStatusState==='error'?'var(--danger)':fbStatusState.startsWith('connected')?'#16a34a':'var(--muted)'}">${esc(getFbStatusText())}</div>
+    ${authBlock}
+    <label>apiKey<input type="text" id="fbApiKey" value="${esc(f.apiKey)}" placeholder="AIzaSy..." /></label>
+    <label>authDomain<input type="text" id="fbAuthDomain" value="${esc(f.authDomain||'')}" placeholder="your-app.firebaseapp.com" /></label>
+    <label>databaseURL<input type="text" id="fbDbUrl" value="${esc(f.databaseURL)}" placeholder="https://xxx-default-rtdb.asia-southeast1.firebasedatabase.app" /></label>
+    <label>projectId<input type="text" id="fbProjectId" value="${esc(f.projectId)}" placeholder="telechat-app" /></label>
+    <label>storageBucket<input type="text" id="fbStorageBucket" value="${esc(f.storageBucket||'')}" placeholder="your-app.appspot.com" /></label>
+    <label>messagingSenderId<input type="text" id="fbMessagingSenderId" value="${esc(f.messagingSenderId||'')}" placeholder="1234567890" /></label>
+    <label>appId<input type="text" id="fbAppId" value="${esc(f.appId||'')}" placeholder="1:123456:web:abcdef" /></label>
+    <label>${esc(t('firebaseRoomCode'))}<input type="text" id="fbRoomCode" value="${esc(f.roomCode||'code3412')}" placeholder="code3412" /></label>
+    <label>OTA URL<input type="text" id="fbOtaUrl" value="${esc(f.otaUrl||'')}" placeholder="http://192.168.1.10:5500/telechat_app.html" /></label>
+    <button class="save-btn" id="saveFirebaseBtn">${esc(t('firebaseSaveConnect'))}</button>
+    <button class="btn ghost" id="testFirebaseBtn" style="border:1px solid var(--border)">${esc(t('firebaseTestConnection'))}</button>
+    <button class="btn ghost" id="pushOtaReloadBtn" style="border:1px solid var(--border)">⚡ Push VS Code Live Reload Signal</button>
+  </div>`;
+}
+
+function renderFaqPage(){
+  return `<div class="sp-section"><div class="sp-card">
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">VS Code မှာ ပြင်လိုက်တာနဲ့ APK မှာ ဘယ်လို တန်းပြောင်းမလဲ?</div><div class="sp-sub">နည်းလမ်း (၁) VS Code Live Server ဖွင့်ပြီး capacitor.config.json ၏ server.url တွင် သင့် Laptop IP (ဥပမာ http://192.168.1.x:5500) သို့မဟုတ် GitHub Pages URL ထည့်ထားပါက VS Code တွင် Ctrl+S နှိပ်တိုင်း APK ပါ တန်းပြောင်းပါသည်။ နည်းလမ်း (၂) Firebase OTA Sync ခလုတ်ကို နှိပ်၍လည်း ဖုန်းအားလုံးကို လှမ်း Reload လုပ်နိုင်ပါသည်။</div></div></div>
+    <div class="sp-row"><div class="sp-body"><div class="sp-title">အင်တာနက်ပြတ်သွားရင် ဘယ်လိုပြမလဲ?</div><div class="sp-sub">အင်တာနက်ပြတ်သွားချိန် (သို့မဟုတ် အပေါ်ညာဘက်ရှိ Wi-Fi ခလုတ်ဖြင့် စမ်းသပ်ချိန်) တွင် Telechat အမည်နေရာ၌ Waiting for network ဟု အလိုအလျောက် ပြောင်းပေးပါသည်။</div></div></div>
+  </div></div>`;
+}
+
+function renderWallpaperPage(){
+  const chat=getActiveChat();const curKey=chat?currentWpKey(chat):null;const wp=chat?wallpaperFor(chat):{mode:'default'};
+  const swatches=WALLPAPER_PRESETS.map(p=>`<div class="wp-swatch${p.key===curKey?' selected':''}" data-key="${p.key}" style="${swatchStyle(p.wp)}" title="${p.label}"><div class="lbl">${p.label}</div></div>`).join('');
+  const noChat=!chat;
+  return `<div class="sp-desc">${esc(t('wallpaperDesc'))}${noChat?` — <b>${esc(t('toastNoChat'))}</b>`:''}</div>
+    <div class="wp-grid">${swatches}</div>
+    <div class="wp-custom">
+      <label class="wp-upload">${SVG_IC.upload}<span>${esc(t('localImage'))}</span><input type="file" id="wpFile" accept="image/*" ${noChat?'disabled':''} /></label>
+      <label><span>${esc(t('customColor'))}</span><input type="color" id="wpColor" value="${wp.mode==='color'?wp.value:'#dbeafe'}" ${noChat?'disabled':''} /></label>
+      <label><span>${esc(t('imageUrl'))}</span><input type="text" id="wpImage" value="${wp.mode==='image'&&!wp.value.startsWith('data:')?esc(wp.value):''}" placeholder="https://example.com/bg.jpg" ${noChat?'disabled':''} /></label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" id="wpApplyAll" ${noChat?'disabled':''}>${esc(t('applyAll'))}</button></div>`;
+}
+
+function renderChatSettingsPage(){
+  const cur=document.documentElement.getAttribute('data-theme')||'light';
+  return `<div class="sp-section"><div class="sp-section-title">${esc(t('theme'))}</div><div class="sp-card"><div class="sp-row" style="flex-direction:column;align-items:stretch;gap:10px"><div class="sp-body"><div class="sp-title">${esc(t('theme'))}</div><div class="sp-sub">${esc(t('themeSub'))}</div></div><div class="theme-opts"><button class="theme-opt${cur==='light'?' active':''}" data-theme-opt="light">${SVG_IC.sun}<span>${esc(t('day'))}</span></button><button class="theme-opt${cur==='dark'?' active':''}" data-theme-opt="dark">${SVG_IC.moon}<span>${esc(t('night'))}</span></button></div></div></div></div>
+  <div class="sp-section"><div class="sp-section-title">${esc(t('wallpaper'))}</div><div class="sp-card"><div class="sp-row"><div class="sp-ico">${SVG_IC.image}</div><div class="sp-body"><div class="sp-title">${esc(t('wallpaper'))}</div><div class="sp-sub">${esc(t('wallpaperDesc'))}</div></div><button class="sp-action" data-open="wallpaper">${esc(t('edit'))}</button></div></div></div>`;
+}
+
+function renderDataStoragePage(){
+  return `<div class="sp-section"><div class="sp-card"><div class="sp-row" style="flex-direction:column;align-items:stretch;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div class="sp-body"><div class="sp-title">${esc(t('storageUsed'))}</div><div class="sp-sub" id="storageSize">…</div></div><button class="sp-action danger" id="clearCacheBtn">${esc(t('clearData'))}</button></div><div class="storage-bar"><div class="storage-bar-fill" id="storageBarFill"></div></div></div></div></div>`;
+}
+
+function renderChatFoldersPage(){
+  const rows=db.folders.map(f=>`<div class="folder-row"><span class="ico-f">${SVG_IC.folder}</span><span>${esc(f.name)}</span>${f.id!=='all'?`<button class="del-folder" data-fid="${esc(f.id)}">${SVG_IC.close}</button>`:''}</div>`).join('');
+  return `<div class="sp-desc">${esc(t('foldersDesc'))}</div><div class="folder-list">${rows}</div><button class="btn primary" id="addFolderBtn" style="width:100%">+ ${esc(t('addFolder'))}</button>`;
+}
+
+function renderLanguagePage(kind){
+  const cur=kind==='app'?currentLang:messageLang;
+  const opts=kind==='app'?['my','en','ko','ja','ru']:['auto','my','en','ko','ja','ru'];
+  const desc=kind==='app'?t('languageDesc'):t('messageLanguageDesc');
+  const rows=opts.map(code=>{
+    const name=code==='auto'?t('auto'):LANG_NAMES[code].native;
+    const sub=code==='auto'?'':LANG_NAMES[code].en;
+    return `<button class="lang-item${cur===code?' active':''}" data-lang="${code}"><span class="lang-name"><div>${esc(name)}</div>${sub?`<div class="lang-native">${esc(sub)}</div>`:''}</span><span class="lang-check">${SVG_IC.check}</span></button>`;
+  }).join('');
+  return `<div class="sp-desc">${esc(desc)}</div><div class="lang-list">${rows}</div>`;
+}
+
+async function updateStorageSize(){
+  const el=document.getElementById('storageSize');const fill=document.getElementById('storageBarFill');
+  if(!el)return;
+  let localBytes=0;
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);const v=localStorage.getItem(k)||'';localBytes+=(k.length+v.length)*2}}catch(e){}
+  el.textContent=fmtBytes(localBytes);
+  if(fill)fill.style.width=Math.min(100,(localBytes/(5*1024*1024))*100)+'%';
+}
+
+/* ================= ACTIONS ================= */
+function sendMessage(){
+  const chat=getActiveChat();if(!chat)return;
+  const text=msgInput.value.trim();
+  if(editingId){
+    if(!text){cancelEdit();return}
+    const m=chat.messages.find(x=>x.id===editingId);
+    if(m){m.text=text;m.edited=true}
+    cancelEdit();save();msgInput.value='';msgInput.style.height='auto';renderMessages();renderChatList();return;
+  }
+  if(!text)return;
+  const msg={id:uid(),type:'text',text,sender:'me',time:Date.now(),status:'sent',replyTo:chat.replyTo||null};
+  chat.messages.push(msg);chat.updatedAt=msg.time;
+  cancelReply();save();msgInput.value='';msgInput.style.height='auto';
+  renderMessages();renderChatList();
+
+  if(fbDb&&fbUid&&!chat.saved){
+    const room=db.firebase.roomCode||'code3412';
+    const senderName=(db.firebase.googleUser&&db.firebase.googleUser.displayName)||db.profile.name||'You';
+    const newRef=push(ref(fbDb,`rooms/${room}/messages`));
+    set(newRef,{uid:fbUid,name:senderName,type:'text',text,timestamp:msg.time}).catch((err)=>{
+      console.warn('Firebase send error',err);
+      handleFirebaseError(err);
+    });
+  }else{
+    simulateReply(chat.id,msg.id,chat.saved);
+  }
+}
+
+async function sendMedia(file,kind){
+  const chat=getActiveChat();if(!chat||!file)return;
+  if(file.size>MAX_FILE_SIZE){flashToast(t('toastFileTooBig'));return}
+  const caption=msgInput.value.trim();
+  try{
+    let media,type=kind;
+    if(kind==='photo')media=await compressImage(file,1280,0.75);
+    else media=await fileToDataUrl(file);
+    const msg={id:uid(),type,media,text:caption,sender:'me',time:Date.now(),status:'sent',replyTo:chat.replyTo||null};
+    if(kind==='file'){msg.fileName=file.name||'file';msg.fileSize=file.size||0}
+    chat.messages.push(msg);chat.updatedAt=msg.time;cancelReply();msgInput.value='';msgInput.style.height='auto';
+    if(save()){renderMessages();renderChatList();simulateReply(chat.id,msg.id,chat.saved)}
+  }catch(e){flashToast(t('toastImageRead'))}
+}
+
+function simulateReply(chatId,msgId,isSaved){
+  setTimeout(()=>{
+    const c=db.chats.find(x=>x.id===chatId);if(!c)return;
+    const mm=c.messages.find(x=>x.id===msgId);if(mm&&mm.status==='sent')mm.status='delivered';
+    if(db.activeId===chatId)renderMessages();save();
+    if(!isSaved)scheduleReply(chatId);
+  },500);
+}
+function scheduleReply(chatId){
+  clearTimeout(typingTimers[chatId]);
+  typingTimers[chatId]=setTimeout(()=>{
+    const chat=db.chats.find(c=>c.id===chatId);if(!chat||chat.saved)return;
+    const last=[...chat.messages].reverse().find(m=>m.sender==='me');if(!last)return;
+    if(db.activeId===chatId){chatStatus.textContent=t('typing');chatStatus.classList.add('typing')}
+    setTimeout(()=>{
+      const c2=db.chats.find(c=>c.id===chatId);if(!c2)return;
+      const reply={id:uid(),type:'text',text:generateReply(last.text||''),sender:'them',time:Date.now(),status:'read'};
+      c2.messages.push(reply);c2.updatedAt=reply.time;
+      c2.messages.forEach(m=>{if(m.sender==='me')m.status='read'});
+      if(db.activeId!==chatId)c2.unread=(c2.unread||0)+1;
+      save();
+      if(db.activeId===chatId){chatStatus.textContent=t('lastSeen');chatStatus.classList.remove('typing');renderMessages()}
+      renderChatList();
+    },900);
+  },450);
+}
+
+function createChat(name){const chat={id:uid(),name:name.trim(),messages:[],unread:0,updatedAt:Date.now()};db.chats.push(chat);save();renderChatList();openChat(chat.id)}
+async function deleteChat(id){
+  if(id===SAVED_ID)return;
+  const chat=db.chats.find(c=>c.id===id);if(!chat)return;
+  const ok=await openDialog({title:t('delete'),desc:`Delete "${chat.name}"?`,danger:true});
+  if(!ok)return;
+  db.chats=db.chats.filter(c=>c.id!==id);
+  if(db.activeId===id){db.activeId=null;chatView.classList.add('hidden');emptyState.classList.remove('hidden');appEl.classList.remove('show-chat')}
+  save();renderChatList();
+}
+
+function startReply(msgId){
+  const chat=getActiveChat();if(!chat)return;
+  cancelEdit();chat.replyTo=msgId;
+  const m=chat.messages.find(x=>x.id===msgId);if(!m)return;
+  replyName.textContent=m.sender==='me'?t('you'):chat.name;
+  replyText.textContent=previewText(m).slice(0,90);
+  replyBar.classList.remove('hidden');msgInput.focus();
+}
+function cancelReply(){const chat=getActiveChat();if(chat)chat.replyTo=null;replyBar.classList.add('hidden')}
+function startEdit(msgId){
+  const chat=getActiveChat();if(!chat)return;
+  const m=chat.messages.find(x=>x.id===msgId);if(!m||m.sender!=='me'||m.type!=='text')return;
+  cancelReply();editingId=msgId;editLabel.textContent=t('editMessage');msgInput.value=m.text;
+  editPreview.textContent=m.text.slice(0,90);editBar.classList.remove('hidden');msgInput.focus();
+}
+function cancelEdit(){editingId=null;editBar.classList.add('hidden');msgInput.value=''}
+
+function saveToSaved(msgId){
+  const chat=getActiveChat();if(!chat)return;
+  const m=chat.messages.find(x=>x.id===msgId);if(!m)return;
+  const savedChat=db.chats.find(c=>c.id===SAVED_ID);if(!savedChat)return;
+  savedChat.messages.push({id:uid(),sender:'me',time:Date.now(),status:'read',type:m.type,media:m.media,text:m.text||'',fileName:m.fileName,fileSize:m.fileSize});
+  savedChat.updatedAt=Date.now();save();renderChatList();flashToast(t('toastSaved'));
+}
+
+function flashToast(text){
+  const el=document.createElement('div');el.textContent=text;
+  el.style.cssText='position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:rgba(0,0,0,.84);color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;z-index:200;pointer-events:none;max-width:88vw;text-align:center;';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+
+function togglePin(msgId){const chat=getActiveChat();if(!chat)return;chat.pinnedId=(chat.pinnedId===msgId)?null:msgId;save();renderPinned(chat)}
+function deleteMessage(msgId){const chat=getActiveChat();if(!chat)return;chat.messages=chat.messages.filter(m=>m.id!==msgId);if(chat.pinnedId===msgId)chat.pinnedId=null;save();renderMessages();renderChatList()}
+async function clearChatHistory(){
+  const chat=getActiveChat();if(!chat)return;
+  const ok=await openDialog({title:t('clearHistory'),desc:t('clearHistoryConfirm'),danger:true});
+  if(!ok)return;
+  chat.messages=[];chat.pinnedId=null;save();renderMessages();renderChatList();chatDropdown.classList.add('hidden');
+}
+
+/* ================= CHAT DROPDOWN & CTX ================= */
+chatMenuBtn.addEventListener('click',e=>{e.stopPropagation();chatDropdown.classList.toggle('hidden')});
+chatDropdown.addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-act]');if(!btn)return;
+  if(btn.dataset.act==='wallpaper'){chatDropdown.classList.add('hidden');openSettingsPage('wallpaper')}
+  else if(btn.dataset.act==='clear')clearChatHistory();
+});
+
+function openCtxMenu(x,y,chatId,msgId){
+  ctxMsg={chatId,msgId};const chat=db.chats.find(c=>c.id===chatId);const m=chat&&chat.messages.find(mm=>mm.id===msgId);
+  const editBtn=ctxMenu.querySelector('[data-act="edit"]');editBtn.style.display=(m&&m.sender==='me'&&m.type==='text')?'':'none';
+  ctxMenu.classList.remove('hidden');
+  ctxMenu.style.left=Math.min(x,window.innerWidth-220)+'px';ctxMenu.style.top=Math.min(y,window.innerHeight-240)+'px';
+}
+function closeCtxMenu(){ctxMenu.classList.add('hidden');ctxMsg=null}
+ctxMenu.addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-act]');if(!btn||!ctxMsg)return;
+  const act=btn.dataset.act,{chatId,msgId}=ctxMsg;
+  if(act==='reply')startReply(msgId);
+  else if(act==='copy'){const chat=db.chats.find(c=>c.id===chatId);const m=chat&&chat.messages.find(mm=>mm.id===msgId);if(m){navigator.clipboard?.writeText(m.text||'');flashToast(t('toastCopied'))}}
+  else if(act==='edit')startEdit(msgId);
+  else if(act==='save')saveToSaved(msgId);
+  else if(act==='pin')togglePin(msgId);
+  else if(act==='delete')deleteMessage(msgId);
+  closeCtxMenu();
+});
+document.addEventListener('click',e=>{
+  if(!ctxMenu.classList.contains('hidden')&&!ctxMenu.contains(e.target))closeCtxMenu();
+  if(!chatDropdown.classList.contains('hidden')&&!chatDropdown.contains(e.target)&&e.target!==chatMenuBtn)chatDropdown.classList.add('hidden');
+});
+messagesEl.addEventListener('contextmenu',e=>{
+  const b=e.target.closest('.bubble');if(!b)return;const msgEl=b.closest('.msg');const chat=getActiveChat();if(!chat||!msgEl)return;
+  e.preventDefault();openCtxMenu(e.clientX,e.clientY,chat.id,msgEl.dataset.mid);
+});
+messagesEl.addEventListener('click',e=>{
+  const img=e.target.closest('img[data-lightbox]');if(img){lightboxImg.src=img.src;lightbox.classList.remove('hidden')}
+});
+lightbox.addEventListener('click',()=>lightbox.classList.add('hidden'));
+
+/* ================= BOTTOM NAV (Chats / Settings / Profile) ================= */
+const bottomNav=document.getElementById('bottomNav');
+const chatsPanel=document.getElementById('chatsPanel');
+const settingsPanel=document.getElementById('settingsPanel');
+bottomNav.addEventListener('click',e=>{
+  const btn=e.target.closest('.nav-btn');if(!btn)return;
+  const tab=btn.dataset.nav;
+  [...bottomNav.querySelectorAll('.nav-btn')].forEach(b=>b.classList.toggle('active',b===btn));
+  if(tab==='chats'){
+    chatsPanel.classList.remove('hidden');settingsPanel.classList.add('hidden');profileSidebarPanel.classList.add('hidden');
+  }else if(tab==='settings'){
+    chatsPanel.classList.add('hidden');settingsPanel.classList.remove('hidden');profileSidebarPanel.classList.add('hidden');
+    renderSettingsProfileCard();renderSettingsList();
+  }else if(tab==='profile'){
+    chatsPanel.classList.add('hidden');settingsPanel.classList.add('hidden');profileSidebarPanel.classList.remove('hidden');
+    profileSidebarContent.innerHTML=buildProfileMarkup();
+  }
+});
+
+/* ================= SETTINGS & PROFILE EVENTS ================= */
+settingsGroup.addEventListener('click',e=>{const item=e.target.closest('.set-item');if(item)openSettingsPage(item.dataset.open)});
+settingsProfileCard.addEventListener('click',e=>{const btn=e.target.closest('[data-pact]');if(btn)handleProfileAction(btn.dataset.pact)});
+
+async function handleProfileClickContainer(e){
+  const copyRow=e.target.closest('[data-copy]');
+  if(copyRow&&copyRow.dataset.copy){
+    try{await navigator.clipboard?.writeText(copyRow.dataset.copy)}catch(err){}
+    flashToast(`${t('toastCopied')}: ${copyRow.dataset.copy}`);return;
+  }
+  const toggleBtn=e.target.closest('[data-post-toggle]');
+  if(toggleBtn){
+    const pid=toggleBtn.dataset.postToggle;
+    const post=(db.profile.posts||[]).find(x=>x.id===pid);
+    if(post){post.archived=!post.archived;save();profileSidebarContent.innerHTML=buildProfileMarkup();if(!settingsView.classList.contains('hidden'))renderSettingsPage()}
+    return;
+  }
+  const btn=e.target.closest('[data-pact]');if(btn){handleProfileAction(btn.dataset.pact);return}
+  const tab=e.target.closest('[data-ptab]');if(tab){profileSubTab=tab.dataset.ptab;profileSidebarContent.innerHTML=buildProfileMarkup();if(!settingsView.classList.contains('hidden'))renderSettingsPage()}
+}
+profileSidebarContent.addEventListener('click',handleProfileClickContainer);
+
+async function handleProfileAction(act){
+  if(act==='setphoto'){
+    const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+    inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{db.profile.avatar=await compressImage(f,600,0.85);save();renderSettingsProfileCard();profileSidebarContent.innerHTML=buildProfileMarkup();if(!settingsView.classList.contains('hidden'))renderSettingsPage();flashToast(t('toastProfileSaved'))}catch(e){}};
+    inp.click();
+  }else if(act==='edit'){openSettingsPage('edit-profile')}
+  else if(act==='settings'){
+    chatsPanel.classList.add('hidden');settingsPanel.classList.remove('hidden');profileSidebarPanel.classList.add('hidden');
+    [...bottomNav.querySelectorAll('.nav-btn')].forEach(b=>b.classList.toggle('active',b.dataset.nav==='settings'));
+    renderSettingsProfileCard();renderSettingsList();closeSettingsPage();
+  }else if(act==='qr'){
+    flashToast(`Telechat QR: @${db.profile.username||'telechat'}`);
+  }else if(act==='copyuser'){
+    const u='@'+(db.profile.username||'telechat');
+    try{await navigator.clipboard?.writeText(u)}catch(e){}
+    flashToast(`${t('toastCopied')}: ${u}`);
+  }else if(act==='music'){
+    const song=await openDialog({title:t('music'),withInput:true,placeholder:'Artist - Song',defaultVal:db.profile.music||''});
+    if(song!==null){db.profile.music=song;save();profileSidebarContent.innerHTML=buildProfileMarkup();if(!settingsView.classList.contains('hidden'))renderSettingsPage()}
+  }else if(act==='newpost'){
+    const txt=await openDialog({title:'New Profile Post',withInput:true,placeholder:'Write a post for your profile...'});
+    if(txt){
+      if(!Array.isArray(db.profile.posts))db.profile.posts=[];
+      db.profile.posts.unshift({id:uid(),text:txt,time:Date.now(),archived:false});
+      save();profileSidebarContent.innerHTML=buildProfileMarkup();if(!settingsView.classList.contains('hidden'))renderSettingsPage();
+    }
+  }
+}
+document.getElementById('settingsBackBtn').addEventListener('click',closeSettingsPage);
+
+settingsPage.addEventListener('click',async e=>{
+  if(e.target.closest('[data-copy]')||e.target.closest('[data-post-toggle]')||e.target.closest('[data-pact]')||e.target.closest('[data-ptab]')){
+    await handleProfileClickContainer(e);return;
+  }
+  const themeBtnEl=e.target.closest('[data-theme-opt]');if(themeBtnEl){applyTheme(themeBtnEl.dataset.themeOpt);renderSettingsPage();return}
+  const opener=e.target.closest('[data-open]');if(opener){openSettingsPage(opener.dataset.open);return}
+
+  if(e.target.id==='clearCacheBtn'){
+    const ok=await openDialog({title:t('clearData'),desc:t('clearCacheConfirm'),danger:true});
+    if(!ok)return;
+    db.chats.forEach(c=>{c.messages.forEach(m=>{if(m.media)delete m.media});delete c.wallpaper});
+    db.wallpaper={mode:'default'};save();updateStorageSize();flashToast(t('toastCacheCleared'));return;
+  }
+  if(e.target.id==='cycleLastSeen'){
+    const opts=['Everybody','My Contacts','Nobody'];
+    db.tgSettings.privacyLastSeen=opts[(opts.indexOf(db.tgSettings.privacyLastSeen)+1)%opts.length];
+    save();renderSettingsPage();return;
+  }
+  if(e.target.id==='cyclePrivacyPhoto'){
+    const opts=['Everybody','My Contacts','Nobody'];
+    db.tgSettings.privacyPhoto=opts[(opts.indexOf(db.tgSettings.privacyPhoto)+1)%opts.length];
+    save();renderSettingsPage();return;
+  }
+  if(e.target.id==='saveFirebaseBtn'){
+    db.firebase.apiKey=document.getElementById('fbApiKey').value.trim();
+    db.firebase.authDomain=document.getElementById('fbAuthDomain').value.trim();
+    db.firebase.databaseURL=document.getElementById('fbDbUrl').value.trim();
+    db.firebase.projectId=document.getElementById('fbProjectId').value.trim();
+    db.firebase.storageBucket=document.getElementById('fbStorageBucket').value.trim();
+    db.firebase.messagingSenderId=document.getElementById('fbMessagingSenderId').value.trim();
+    db.firebase.appId=document.getElementById('fbAppId').value.trim();
+    db.firebase.roomCode=document.getElementById('fbRoomCode').value.trim()||'code3412';
+    db.firebase.otaUrl=document.getElementById('fbOtaUrl').value.trim();
+    save();scheduleFirebaseInit();flashToast('Firebase Config Saved');return;
+  }
+  if(e.target.closest('#googleSignInBtn')){
+    signInWithGoogle();return;
+  }
+  if(e.target.id==='googleSignOutBtn'){
+    signOutGoogle();return;
+  }
+  if(e.target.id==='testFirebaseBtn'){
+    testFirebaseConnection();return;
+  }
+  if(e.target.id==='pushOtaReloadBtn'){
+    if(fbDb&&db.firebase.connected){
+      const room=db.firebase.roomCode||'code3412';
+      set(ref(fbDb,`rooms/${room}/ota_version`),{timestamp:Date.now()});
+      flashToast('⚡ Sent Live Reload Signal to all connected APKs!');
+    }else{
+      flashToast('Connect Firebase first, or use Capacitor server.url with VS Code Live Server!');
+    }
+    return;
+  }
+  const delF=e.target.closest('.del-folder');
+  if(delF){db.folders=db.folders.filter(f=>f.id!==delF.dataset.fid);if(db.activeFolder===delF.dataset.fid)db.activeFolder='all';save();renderSettingsPage();renderFolderChips();renderChatList();return}
+  if(e.target.id==='addFolderBtn'){
+    const name=await openDialog({title:t('addFolder'),withInput:true,placeholder:t('folderNamePrompt')});
+    if(name){db.folders.push({id:uid(),name});save();renderSettingsPage();renderFolderChips()}
+    return;
+  }
+  if(e.target.id==='removeAvatar'){db.profile.avatar='';save();renderSettingsPage();renderSettingsProfileCard();return}
+  if(e.target.id==='saveProfile'){
+    db.profile.name=document.getElementById('editName').value.trim()||t('you');
+    db.profile.username=document.getElementById('editUsername').value.trim().replace(/^@/,'');
+    db.profile.mobile=document.getElementById('editMobile').value.trim();
+    db.profile.birthday=document.getElementById('editBirthday').value;
+    db.profile.music=document.getElementById('editMusic').value.trim();
+    db.profile.channelName=document.getElementById('editChannel').value.trim();
+    db.profile.channelLink=document.getElementById('editChannelLink').value.trim();
+    db.profile.bio=document.getElementById('editBio').value.trim();
+    save();renderSettingsProfileCard();profileSidebarContent.innerHTML=buildProfileMarkup();flashToast(t('toastProfileSaved'));closeSettingsPage();return;
+  }
+  const langBtn=e.target.closest('[data-lang]');
+  if(langBtn){
+    const kind=settingsStack[settingsStack.length-1];const code=langBtn.dataset.lang;
+    if(kind==='language'){currentLang=code;localStorage.setItem(LANG_KEY,code);applyTranslations();renderSettingsPage()}
+    else{messageLang=code;localStorage.setItem(MSGLANG_KEY,code);renderSettingsPage()}
+    return;
+  }
+  const sw=e.target.closest('.wp-swatch');
+  if(sw){const preset=WALLPAPER_PRESETS.find(p=>p.key===sw.dataset.key);const chat=getActiveChat();if(preset&&chat){chat.wallpaper=JSON.parse(JSON.stringify(preset.wp));save();renderSettingsPage();applyWallpaperTo(messagesEl,wallpaperFor(chat))}return}
+  if(e.target.id==='wpApplyAll'){const chat=getActiveChat();if(chat){db.wallpaper=JSON.parse(JSON.stringify(wallpaperFor(chat)));save();flashToast(t('toastWallpaperAll'))}return}
+});
+
+settingsPage.addEventListener('change',async e=>{
+  if(e.target.dataset&&e.target.dataset.tg){
+    db.tgSettings[e.target.dataset.tg]=e.target.checked;save();
+    if(e.target.dataset.tg==='notiEnabled'&&e.target.checked&&"Notification" in window){Notification.requestPermission()}
+    return;
+  }
+  if(e.target.id==='editAvatarFile'){
+    const f=e.target.files&&e.target.files[0];if(!f)return;
+    try{db.profile.avatar=await compressImage(f,600,0.85);save();renderSettingsPage();renderSettingsProfileCard()}catch(err){}
+    e.target.value='';
+  }
+  if(e.target.id==='wpFile'){
+    const f=e.target.files&&e.target.files[0];const chat=getActiveChat();if(!f||!chat)return;
+    try{chat.wallpaper={mode:'image',value:await compressImage(f,1280,0.78)};save();applyWallpaperTo(messagesEl,wallpaperFor(chat));renderSettingsPage()}catch(err){}
+    e.target.value='';
+  }
+});
+
+function swatchStyle(wp){
+  if(!wp||wp.mode==='default')return 'background-color:var(--chat-bg);border:1px solid var(--border)';
+  if(wp.mode==='color')return `background:${wp.value};`;
+  if(wp.mode==='gradient')return `background-image:${wp.value};`;
+  return 'background-color:var(--chat-bg)';
+}
+function currentWpKey(chat){
+  const wp=wallpaperFor(chat);const found=WALLPAPER_PRESETS.find(p=>JSON.stringify(p.wp)===JSON.stringify(wp));return found?found.key:null;
+}
+
+/* ================= EVENTS ================= */
+sendBtn.addEventListener('click',sendMessage);
+msgInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendMessage()}});
+msgInput.addEventListener('input',()=>{msgInput.style.height='auto';msgInput.style.height=Math.min(msgInput.scrollHeight,160)+'px'});
+attachBtn.addEventListener('click',e=>{e.stopPropagation();attachBtn.classList.toggle('open');attachMenu.classList.toggle('hidden')});
+attachMenu.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-upload]');if(!btn)return;
+  attachBtn.classList.remove('open');attachMenu.classList.add('hidden');
+  document.getElementById({photo:'photoInput',video:'videoInput',audio:'audioInput',file:'fileInput'}[btn.dataset.upload]).click();
+});
+document.getElementById('photoInput').addEventListener('change',e=>{if(e.target.files[0])sendMedia(e.target.files[0],'photo');e.target.value=''});
+document.getElementById('videoInput').addEventListener('change',e=>{if(e.target.files[0])sendMedia(e.target.files[0],'video');e.target.value=''});
+document.getElementById('audioInput').addEventListener('change',e=>{if(e.target.files[0])sendMedia(e.target.files[0],'audio');e.target.value=''});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])sendMedia(e.target.files[0],'file');e.target.value=''});
+
+chatListEl.addEventListener('click',e=>{
+  const del=e.target.closest('[data-del]');if(del){e.stopPropagation();deleteChat(del.dataset.del);return}
+  const item=e.target.closest('.chat-item');if(item)openChat(item.dataset.id);
+});
+searchInput.addEventListener('input',renderChatList);
+folderChips.addEventListener('click',e=>{
+  const addBtn=e.target.closest('#addFolderChip');if(addBtn){openSettingsPage('chat-folders');return}
+  const chip=e.target.closest('.folder-chip[data-fid]');if(!chip)return;
+  db.activeFolder=chip.dataset.fid;save();renderFolderChips();renderChatList();
+});
+document.getElementById('backBtn').addEventListener('click',closeChatView);
+document.getElementById('replyClose').addEventListener('click',cancelReply);
+document.getElementById('editClose').addEventListener('click',cancelEdit);
+document.getElementById('unpinBtn').addEventListener('click',e=>{e.stopPropagation();const c=getActiveChat();if(c){c.pinnedId=null;save();renderPinned(c)}});
+
+const modalOverlay=document.getElementById('modalOverlay');const newChatName=document.getElementById('newChatName');
+document.getElementById('newChatBtn').addEventListener('click',()=>{modalOverlay.classList.remove('hidden');newChatName.value='';setTimeout(()=>newChatName.focus(),50)});
+document.getElementById('cancelNewChat').addEventListener('click',()=>modalOverlay.classList.add('hidden'));
+document.getElementById('createChat').addEventListener('click',()=>{const n=newChatName.value.trim();if(!n)return;modalOverlay.classList.add('hidden');createChat(n)});
+
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(theme){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem(THEME_KEY,theme);const c=getActiveChat();if(c)applyWallpaperTo(messagesEl,wallpaperFor(c))}
+themeBtn.addEventListener('click',()=>{applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');if(!settingsView.classList.contains('hidden'))renderSettingsPage()});
+
+function applyTranslations(){
+  document.documentElement.setAttribute('lang',currentLang);
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});
+  searchInput.placeholder=t('searchChats');msgInput.placeholder=t('writeMessage');emptyStateText.textContent=t('emptyState');
+  renderSettingsProfileCard();renderSettingsList();renderFolderChips();renderChatList();updateNetworkTitle();
+}
+
+(function init(){
+  document.documentElement.setAttribute('data-theme',localStorage.getItem(THEME_KEY)||'light');
+  load();initFirebaseIfConfigured();applyTranslations();
+  if(db.activeId&&db.chats.some(c=>c.id===db.activeId))openChat(db.activeId);
+})();
+
+// Mobile Touch Long-Press Context Menu
+messagesEl.addEventListener('touchstart',e=>{
+  const b=e.target.closest('.bubble');if(!b)return;
+  const msgEl=b.closest('.msg');const chat=getActiveChat();if(!chat||!msgEl)return;
+  const touch=e.touches[0];
+  longPressTimer=setTimeout(()=>{
+    openCtxMenu(touch.clientX,touch.clientY,chat.id,msgEl.dataset.mid);
+    if(navigator.vibrate)navigator.vibrate(15);
+  },480);
+},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(ev=>messagesEl.addEventListener(ev,()=>{clearTimeout(longPressTimer)},{passive:true}));
+
+// Mobile Back Button Support (closes chat or settings instead of exiting APK)
+window.addEventListener('popstate',()=>{
+  if(!settingsView.classList.contains('hidden'))closeSettingsPage();
+  else if(db.activeId)closeChatView();
+});
+
+</script>
+</body>
+</html>
